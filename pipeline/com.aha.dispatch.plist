@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.aha.dispatch</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/.venv/bin/python</string>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/pipeline/dispatch_quick.py</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AHA_DATA_DIR</key><string>/Users/rshao/aha_data</string>
+    <key>PATH</key><string>/Users/rshao/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartInterval</key><integer>120</integer>
+  <key>AbandonProcessGroup</key><true/>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/Users/rshao/Library/Logs/aha-dispatch.log</string>
+  <key>StandardErrorPath</key><string>/Users/rshao/Library/Logs/aha-dispatch.log</string>
+</dict>
+</plist>

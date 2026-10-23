@@ -1,0 +1,40 @@
+# Aha 个人词表：一行一条 `错→对`，# 开头是注释。
+# 无前缀 = 确定替换（代码里直接做，大小写不敏感，ASCII 词按词边界）。
+# `!` 前缀 = 确定替换，但前面紧跟英文单词时不换（latency spike 保持原样）。
+# `?` 前缀 = 仅提示本地模型，按上下文判断（词本身可能是正常词，如 latency spike）。
+Encore→oncall
+OpenSpike→OpenSpec
+Open Spike→OpenSpec
+SPEIKE→OpenSpec
+!Spike→Spec
+?Jenny→journey（语境是旅程/经历时）
+CircleLit→SQLite
+circle→SQL
+uncore→oncall
+cubesystem→kube-system
+cube system→kube-system
+Deepseq→DeepSeek
+Cloud Code→Claude Code
+Cloud CLI→CloudCLI
+!Cloud→Claude
+Solnet→Sonnet
+Sonet→Sonnet
+Tail Scale→Tailscale
+AA项目→Aha 项目
+列路→链路
+刹写→session
+ProFix→prefix
+CuberCTL→kubectl
+?Alliance→alias（指命令别名时）
+下量库→向量库
+user den→USER.md
+User point Markdown→USER.md
+二次教验→二次校验
+Supprise→surprise
+?中段→终端（指手机/电脑端点时）
+?Finch→fetch（指取回数据时）
+class IP→ClusterIP
+ride team→red team
+ng ingress→nginx ingress
+技术站→技术栈
+?可读成→（待判断，仅提示）

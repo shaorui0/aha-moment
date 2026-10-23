@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.aha.digest</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/.venv/bin/python</string>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/pipeline/daily_digest.py</string>
+    <string>--llm</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AHA_DATA_DIR</key><string>/Users/rshao/aha_data</string>
+    <key>PATH</key><string>/Users/rshao/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>23</integer><key>Minute</key><integer>50</integer></dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/Users/rshao/Library/Logs/aha-digest.log</string>
+  <key>StandardErrorPath</key><string>/Users/rshao/Library/Logs/aha-digest.log</string>
+</dict>
+</plist>

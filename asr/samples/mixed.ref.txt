@@ -1,0 +1,1 @@
+我们把 Redis 的 timeout 改成三秒，然后看 Grafana 的 P99

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aha 架构全景</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a64; --line:#dcd8cd;
+  --accent:#c2410c; --accent-soft:#fbe7dc;
+  --c1:#0f766e; --c1s:#d9f1ee;   /* capture */
+  --c2:#4338ca; --c2s:#e3e3fb;   /* transcribe */
+  --c3:#a16207; --c3s:#f6ecd2;   /* text */
+  --c4:#7c3aed; --c4s:#ece3fd;   /* llm + ci */
+  --c5:#be123c; --c5s:#fbe0e7;   /* outputs */
+  --done:#15803d; --plan:#9a9890;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141413; --panel:#1d1d1b; --ink:#ecebe6; --muted:#a3a29b; --line:#34332f;
+    --accent:#fb923c; --accent-soft:#3a2418;
+    --c1:#2dd4bf; --c1s:#12302c; --c2:#a5b4fc; --c2s:#1f2140; --c3:#facc15; --c3s:#332a10;
+    --c4:#c4b5fd; --c4s:#2a2040; --c5:#fb7185; --c5s:#3a1822; --done:#4ade80; --plan:#77766f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141413; --panel:#1d1d1b; --ink:#ecebe6; --muted:#a3a29b; --line:#34332f;
+  --accent:#fb923c; --accent-soft:#3a2418;
+  --c1:#2dd4bf; --c1s:#12302c; --c2:#a5b4fc; --c2s:#1f2140; --c3:#facc15; --c3s:#332a10;
+  --c4:#c4b5fd; --c4s:#2a2040; --c5:#fb7185; --c5s:#3a1822; --done:#4ade80; --plan:#77766f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans SC",-apple-system,"PingFang SC",sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:40px 16px 80px}
+header .kicker{color:var(--accent);font-weight:500;letter-spacing:.08em;font-size:13px}
+h1{font-size:clamp(28px,4.5vw,44px);line-height:1.2;margin:.3em 0 .4em}
+.lede{color:var(--muted);max-width:760px;font-size:17px}
+h2{font-size:24px;margin:64px 0 8px}
+.sub{color:var(--muted);margin:0 0 24px}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:16px 0 0}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.legend .d::before{background:var(--done)} .legend .p::before{background:transparent;border:1.5px dashed var(--plan)}
+
+
+/* ---------- diagram ---------- */
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;margin-top:20px}
+.diagram svg{display:block;width:100%;height:auto}
+.diagram text{font-family:"Noto Sans SC",-apple-system,"PingFang SC",sans-serif;fill:var(--ink)}
+.diagram .t{font-size:17px;font-weight:700}
+.diagram .s{font-size:12.5px;fill:var(--muted)}
+.diagram .k{font-size:11px;font-weight:500;letter-spacing:.06em;fill:var(--muted)}
+.diagram .node{fill:var(--panel);stroke-width:2}
+.diagram .plan{stroke-dasharray:6 5}
+.diagram .chip{fill:var(--bg);stroke:var(--line)}
+.diagram .ar{stroke:var(--muted);stroke-width:2;fill:none}
+.diagram .ar.plan{stroke-dasharray:6 5}
+.diagram .lbl{font-size:12px;fill:var(--muted)}
+
+/* ---------- pipeline ---------- */
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:stretch;margin-top:28px}
+.stage{position:relative;padding:0 10px}
+.stage .head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.stage .num{font:500 12px "JetBrains Mono",monospace;color:var(--muted)}
+.stage .name{font-weight:700;font-size:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px;margin-bottom:10px;border-top:4px solid var(--k)}
+.card h4{margin:0 0 4px;font-size:15px}
+.card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55}
+.card.plan{border-style:dashed;border-top-style:solid;opacity:.92}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;margin-left:6px;vertical-align:2px;font-weight:500}
+.tag.d{background:color-mix(in srgb,var(--done) 16%,transparent);color:var(--done)}
+.tag.p{border:1px dashed var(--plan);color:var(--plan)}
+.s1{--k:var(--c1)} .s2{--k:var(--c2)} .s3{--k:var(--c3)} .s4{--k:var(--c4)} .s5{--k:var(--c5)}
+.stage .band{height:6px;border-radius:99px;background:var(--k);opacity:.85;margin-bottom:14px}
+.stage:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:-2px;font-size:20px;color:var(--muted)}
+.loop{margin:18px 10px 0;border:1.5px dashed var(--line);border-radius:14px;padding:12px 16px;color:var(--muted);font-size:14px;text-align:center}
+.loop b{color:var(--ink)}
+
+/* ---------- time accumulation ---------- */
+.accum{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-top:12px}
+.accum .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+.accum .box b{display:block;font-size:20px}
+.accum .box span{color:var(--muted);font-size:13px}
+.accum .arr{color:var(--muted);font-size:22px}
+.dots{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:10px auto 0;max-width:200px}
+.dots i{width:7px;height:7px;border-radius:2px;background:var(--c3);opacity:.75}
+
+/* ---------- CI ---------- */
+.ci{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.cap .t{font-weight:700;font-size:16px;margin-bottom:2px}
+.cap .q{color:var(--accent);font-size:13px;margin-bottom:8px}
+.cap p{margin:0 0 8px;color:var(--muted);font-size:14px}
+.cap ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.cap li{margin:2px 0}
+.core{grid-column:1/-1;background:var(--c4s);border-color:transparent}
+.core .stack{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.layer{background:var(--panel);border-radius:10px;padding:12px}
+.layer b{display:block;font-size:14px}
+.layer span{font-size:13px;color:var(--muted)}
+
+.why{margin-top:28px;background:var(--accent-soft);border-radius:14px;padding:18px 20px}
+.why b{color:var(--accent)}
+footer{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+
+@media (max-width:900px){
+  .flow{grid-template-columns:1fr}
+  .stage{padding:0}
+  .stage:not(:last-child)::after{content:"↓";position:static;display:block;text-align:center;margin:2px 0 10px}
+  .ci{grid-template-columns:1fr}
+  .core .stack{grid-template-columns:1fr}
+  .accum{grid-template-columns:1fr}
+  .accum .arr{transform:rotate(90deg);justify-self:center}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">AHA MOMENT × CONTEXT INFRASTRUCTURE</div>
+  <h1>从一句随口的话，到一个懂我的 AI</h1>
+  <p class="lede">入口是一个只有一个按钮的录音器。说出来的话被模型转成文字，一天一天堆起来；这些文字再和 context infrastructure 里「我是谁、我怎么想、我在做什么」放在一起交给 LLM，帮我把每天的所思所想、做过的事整理清楚，并找出它们之间我自己没注意到的关联。</p>
+  <div class="legend"><span class="d">已经跑起来</span><span class="p">想做的方向</span></div>
+</header>
+
+
+<h2>架构图</h2>
+<p class="sub">实线 = 已经跑起来；虚线 = 想做的方向。</p>
+<div class="diagram">
+<svg viewBox="0 0 1100 600" role="img" aria-label="Aha Moment 与 Context Infrastructure 架构图">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+    </marker>
+  </defs>
+
+  <!-- top row: capture -> audio -> transcribe -> text -->
+  <text class="k" x="24" y="30">入口</text>
+  <rect class="node" x="20" y="44" width="200" height="120" rx="16" style="stroke:var(--c1)"/>
+  <text class="t" x="40" y="80">Aha 录音器</text>
+  <text class="s" x="40" y="104">iPhone · 一个按钮</text>
+  <text class="s" x="40" y="124">点开始 / 再点停止</text>
+  <text class="s" x="40" y="144">锁屏照录 · 被杀不丢</text>
+
+  <path class="ar" d="M220 104 H268" marker-end="url(#ah)"/>
+  <text class="k" x="288" y="30">录音</text>
+  <rect class="node" x="276" y="44" width="170" height="120" rx="16" style="stroke:var(--c1)"/>
+  <text class="t" x="296" y="80">音频</text>
+  <text class="s" x="296" y="104">60 秒一段 .aac</text>
+  <text class="s" x="296" y="124">离线排队，回家上传</text>
+  <text class="s" x="296" y="144">Mac 永久保留原件</text>
+
+  <path class="ar" d="M446 104 H494" marker-end="url(#ah)"/>
+  <text class="k" x="514" y="30">LLM 转写</text>
+  <rect class="node" x="502" y="44" width="250" height="120" rx="16" style="stroke:var(--c2)"/>
+  <rect class="chip" x="518" y="64" width="104" height="80" rx="10"/>
+  <text class="t" x="530" y="94" style="font-size:14px">本地</text>
+  <text class="s" x="530" y="114">Whisper</text>
+  <text class="s" x="530" y="132">Mac · 10× 实时</text>
+  <rect class="chip plan" x="632" y="64" width="104" height="80" rx="10"/>
+  <text class="t" x="644" y="94" style="font-size:14px">远端</text>
+  <text class="s" x="644" y="114">云端模型</text>
+  <text class="s" x="644" y="132">可选</text>
+
+  <path class="ar" d="M752 104 H800" marker-end="url(#ah)"/>
+  <text class="k" x="820" y="30">文字</text>
+  <rect class="node" x="808" y="44" width="272" height="120" rx="16" style="stroke:var(--c3)"/>
+  <text class="t" x="828" y="80">一段录音 = 一个文字文件</text>
+  <text class="s" x="828" y="104">daily_records/日期_时间_aha.md</text>
+  <text class="s" x="828" y="124">一天几十段 → 一个月上千段</text>
+  <text class="s" x="828" y="144">转完几秒出现</text>
+
+  <!-- text -> LLM brain -->
+  <path class="ar plan" d="M944 164 V250 H760" marker-end="url(#ah)"/>
+  <text class="lbl" x="800" y="240">每天 / 每周 / 每月的文字</text>
+  <!-- text also lands in CI knowledge base -->
+  <path class="ar" d="M860 164 V200 H420 V262" marker-end="url(#ah)"/>
+  <text class="lbl" x="440" y="194">存进个人知识库</text>
+
+  <!-- Context Infrastructure -->
+  <text class="k" x="24" y="250">CONTEXT INFRASTRUCTURE · 长期的我</text>
+  <rect class="node" x="20" y="264" width="500" height="250" rx="18" style="stroke:var(--c4)"/>
+  <rect class="chip" x="38" y="282" width="148" height="66" rx="10"/>
+  <text class="t" x="50" y="308" style="font-size:14px">我是谁</text>
+  <text class="s" x="50" y="330">SOUL · USER</text>
+  <rect class="chip" x="196" y="282" width="148" height="66" rx="10"/>
+  <text class="t" x="208" y="308" style="font-size:14px">我怎么想</text>
+  <text class="s" x="208" y="330">52 条决策公理</text>
+  <rect class="chip" x="354" y="282" width="148" height="66" rx="10"/>
+  <text class="t" x="366" y="308" style="font-size:14px">事情怎么做</text>
+  <text class="s" x="366" y="330">~70 个 skills</text>
+  <rect class="chip" x="38" y="358" width="227" height="66" rx="10"/>
+  <text class="t" x="50" y="384" style="font-size:14px">三层记忆</text>
+  <text class="s" x="50" y="406">L3 规则 · L1/L2 观察 · 自动积累</text>
+  <rect class="chip" x="275" y="358" width="227" height="66" rx="10"/>
+  <text class="t" x="287" y="384" style="font-size:14px">知识库</text>
+  <text class="s" x="287" y="406">daily_records · 调研 · 复盘 · 项目</text>
+  <rect class="chip" x="38" y="434" width="464" height="62" rx="10"/>
+  <text class="t" x="50" y="460" style="font-size:14px">自己会动</text>
+  <text class="s" x="50" y="482">每日 observer · 每周 reflector · Aha 同步 · 并行 subagent · 文件路由表</text>
+
+  <!-- CI -> LLM brain -->
+  <path class="ar plan" d="M520 330 H578" marker-end="url(#ah)"/>
+  <text class="lbl" x="526" y="356">画像</text><text class="lbl" x="526" y="372">公理</text><text class="lbl" x="526" y="388">记忆</text>
+
+  <!-- LLM brain -->
+  <text class="k" x="600" y="250">LLM · 理解与关联</text>
+  <rect class="node plan" x="586" y="264" width="174" height="140" rx="70" style="stroke:var(--c4)"/>
+  <text class="t" x="673" y="322" text-anchor="middle">LLM</text>
+  <text class="s" x="673" y="346" text-anchor="middle">带着「我是谁」</text>
+  <text class="s" x="673" y="366" text-anchor="middle">去读每天的我</text>
+
+  <!-- brain -> outputs -->
+  <path class="ar plan" d="M760 334 H808" marker-end="url(#ah)"/>
+  <text class="k" x="820" y="300">产出</text>
+  <rect class="node plan" x="808" y="314" width="272" height="200" rx="18" style="stroke:var(--c5)"/>
+  <text class="t" x="828" y="350" style="font-size:15px">每天的所思所想</text>
+  <text class="s" x="828" y="370">在想什么 · 卡在哪 · 新念头</text>
+  <text class="t" x="828" y="404" style="font-size:15px">每天干了什么</text>
+  <text class="s" x="828" y="424">做过的事 · 待办 · 决定</text>
+  <text class="t" x="828" y="458" style="font-size:15px;fill:var(--c5)">★ 跨时间的关联</text>
+  <text class="s" x="828" y="478">三周前那句话 ↔ 今天的问题</text>
+
+  <!-- feedback loop -->
+  <path class="ar plan" d="M944 514 V560 H270 V518" marker-end="url(#ah)"/>
+  <text class="lbl" x="470" y="580">写回记忆与知识库：下一次 LLM 读到的「我」更完整（越用越准）</text>
+</svg>
+</div>
+
+<h2>主链路</h2>
+<p class="sub">五段，左边是输入，右边是我真正想要的东西。</p>
+
+<div class="flow">
+  <div class="stage s1">
+    <div class="band"></div>
+    <div class="head"><span class="num">01</span><span class="name">入口：录音</span></div>
+    <div class="card s1"><h4>Aha 录音器<span class="tag d">已实现</span></h4><p>iPhone 一个按钮：点一下开始，再点一下停止。锁屏照录，录几句还是录一天由我决定。</p></div>
+    <div class="card s1"><h4>不丢、不打扰<span class="tag d">已实现</span></h4><p>60 秒自动切段，App 被杀也能救回；停了会通知；不联网也能录，回家自动上传。</p></div>
+  </div>
+
+  <div class="stage s2">
+    <div class="band"></div>
+    <div class="head"><span class="num">02</span><span class="name">LLM 转写</span></div>
+    <div class="card s2"><h4>本地模型<span class="tag d">已实现</span></h4><p>Mac 上的 Whisper large-v3-turbo，约 10 倍实时；声音不出这台电脑；没人说话的噪音自动过滤。</p></div>
+    <div class="card s2 plan"><h4>远端模型<span class="tag p">可选</span></h4><p>出门在外、或想要更强的识别时，换成云端模型；接口已经留好，换后端不动上下游。</p></div>
+  </div>
+
+  <div class="stage s3">
+    <div class="band"></div>
+    <div class="head"><span class="num">03</span><span class="name">文字</span></div>
+    <div class="card s3"><h4>一段录音 = 一个文件<span class="tag d">已实现</span></h4><p>只有文字，放进 <code>daily_records/日期_时间_aha.md</code>，转完几秒就出现，随手可复制。</p></div>
+    <div class="card s3"><h4>按天、按月堆起来<span class="tag d">已实现</span></h4><p>原始音频永远保留，换了更好的模型可以把过去全部重转一遍。</p></div>
+  </div>
+
+  <div class="stage s4">
+    <div class="band"></div>
+    <div class="head"><span class="num">04</span><span class="name">LLM × 我的上下文</span></div>
+    <div class="card s4 plan"><h4>带着「我是谁」去读<span class="tag p">方向</span></h4><p>一天 / 一周 / 一个月的文字，连同 context infrastructure 里的画像、公理、项目、记忆一起交给 LLM。</p></div>
+    <div class="card s4"><h4>上下文底座<span class="tag d">已存在</span></h4><p>规则、skills、三层记忆、每日 observer，下面单独展开。</p></div>
+  </div>
+
+  <div class="stage s5">
+    <div class="band"></div>
+    <div class="head"><span class="num">05</span><span class="name">产出</span></div>
+    <div class="card s5 plan"><h4>每天的所思所想<span class="tag p">方向</span></h4><p>把零散的话整理成：今天在想什么、卡在哪、有什么新念头。</p></div>
+    <div class="card s5 plan"><h4>每天干了什么<span class="tag p">方向</span></h4><p>从口述里拎出做过的事、待办、决定，接上工作日志。</p></div>
+    <div class="card s5 plan"><h4>跨时间的关联<span class="tag p">最想要</span></h4><p>三周前随口一句和今天的问题其实是一件事——这是 AI 最该做、我自己最做不到的。</p></div>
+  </div>
+</div>
+
+<div class="loop">产出再写回 <b>context infrastructure</b>（记忆、观察、项目笔记），下一次 LLM 读到的「我」就更完整——这是一个越用越准的闭环。</div>
+
+<h2>文字是怎么堆起来的</h2>
+<p class="sub">单条文字没什么价值，价值在时间维度上的密度。</p>
+<div class="accum">
+  <div class="box"><b>一段录音</b><span>一个文件，一句到一小时</span><div class="dots"><i></i></div></div>
+  <div class="arr">→</div>
+  <div class="box"><b>一天</b><span>几个到几十个文件</span><div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+  <div class="arr">→</div>
+  <div class="box"><b>一个月</b><span>上千段，自己读不完，正好交给 LLM</span><div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+</div>
+
+<h2>Context Infrastructure 最重要的能力</h2>
+<p class="sub">一个放在 git 里的个人 AI 工作区。每次开一个新的 AI 会话，它先读这里，所以 AI 一上来就知道我是谁、我在乎什么、东西放在哪、事情该怎么做。</p>
+
+<div class="ci">
+  <div class="cap core">
+    <div class="t">核心：三层记忆</div>
+    <div class="q">让 AI 记得我，而且记得越来越准</div>
+    <div class="stack">
+      <div class="layer"><b>L3 · 全局约束</b><span><code>rules/</code> 下的身份、画像、沟通方式、公理、skills。每次会话被动加载。</span></div>
+      <div class="layer"><b>L1/L2 · 动态记忆</b><span><code>contexts/memory/OBSERVATIONS.md</code>，按日期记录 🔴🟡🟢 观察，需要时主动检索。</span></div>
+      <div class="layer"><b>自动积累</b><span>每天 observer 扫新增内容写观察，每周 reflector 把反复出现的观察升级成规则或清理掉。</span></div>
+    </div>
+  </div>
+
+  <div class="cap">
+    <div class="t">我是谁</div>
+    <div class="q">身份与画像</div>
+    <p><code>SOUL.md</code> 定义 AI 的角色和底线；<code>USER.md</code> 记录我的背景、方向、偏好、讨厌什么；<code>COMMUNICATION.md</code> 规定怎么跟我说话。</p>
+  </div>
+
+  <div class="cap">
+    <div class="t">我怎么想</div>
+    <div class="q">52 条决策公理</div>
+    <p>从自己经历里提炼的判断原则，带触发词和案例。遇到取舍时 AI 拿它们当思考的起点，而不是给通用建议。</p>
+  </div>
+
+  <div class="cap">
+    <div class="t">事情怎么做</div>
+    <div class="q">约 70 个 skills</div>
+    <p>可复用的做事方法：深度调研、并行 subagent、SRE 排障、博客发布、日语 Anki、语义搜索……「怎么做 X」先查 skill。</p>
+  </div>
+
+  <div class="cap">
+    <div class="t">东西在哪</div>
+    <div class="q">文件路由表</div>
+    <p><code>WORKSPACE.md</code> 是整个工作区的目录索引：每类内容放哪、去哪找，AI 不用全盘搜索。</p>
+  </div>
+
+  <div class="cap">
+    <div class="t">我的知识库</div>
+    <div class="q">原始记录 + 加工过的知识</div>
+    <ul>
+      <li><code>daily_records/</code> 每日原始记录（宁原始勿提炼，Aha 的文字也在这）</li>
+      <li><code>survey_sessions/</code> 调研报告</li>
+      <li><code>thought_review/</code> 复盘与方法论</li>
+      <li><code>projects/</code> 长期项目，各自独立 repo</li>
+    </ul>
+  </div>
+
+  <div class="cap">
+    <div class="t">自己会动</div>
+    <div class="q">定时任务 + 多 agent</div>
+    <ul>
+      <li>每天：observer 写观察、Aha 文字同步进 daily_records</li>
+      <li>每周：reflector 整理记忆、晋升规则</li>
+      <li>大任务拆给并行 subagent，按任务类型路由到不同模型</li>
+    </ul>
+  </div>
+</div>
+
+<div class="why">
+  <b>为什么两者要接在一起：</b>context infrastructure 知道「我是谁」，但它只能看到我写下来的东西；Aha 把我没来得及写、随口说出来的那部分补进来。一个提供长期的我，一个提供每天的我，LLM 站在两者中间，才有可能发现「三周前那句话」和「今天这个问题」之间的联系。
+</div>
+
+<footer>
+  Aha Moment：<code>projects/aha_moment</code>（shaorui0/aha-moment）· Context Infrastructure：<code>~/work/context-infrastructure</code>（shaorui0/context-infrastructure）· 2026-10-12
+</footer>
+</div>
+</body>
+</html>

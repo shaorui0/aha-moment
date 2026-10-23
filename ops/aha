@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+"""aha CLI: serve | status | reprocess | token | today | doctor | retry | transcribe | last | check | claude-kill | claude-runs"""
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+VENV_PY = HERE.parent / ".venv" / "bin" / "python"
+if VENV_PY.exists() and Path(sys.prefix).resolve() != VENV_PY.parent.parent.resolve():
+    os.execv(str(VENV_PY), [str(VENV_PY), __file__, *sys.argv[1:]])   # ASR deps live only in the venv
+sys.path.insert(0, str(HERE.parent / "server"))
+sys.path.insert(0, str(HERE.parent / "asr"))
+
+import storage  # noqa: E402
+
+
+def cmd_serve(a):
+    import uvicorn
+    storage.load_token()  # generate + announce on first run
+    host = a.host or os.environ.get("AHA_HOST", "0.0.0.0")
+    port = a.port or int(os.environ.get("AHA_PORT", "8765"))
+    print(f"[aha] data dir: {storage.data_root()}  listening on {host}:{port}", flush=True)
+    uvicorn.run("app:app_from_env", factory=True, host=host, port=port, log_level="info")
+
+
+def cmd_token(a):
+    print(storage.load_token(announce=lambda m: print(m, file=sys.stderr)))
+    print(f"(source: env AHA_TOKEN or {storage.token_file()})", file=sys.stderr)
+
+
+def cmd_qr(a):
+    """Show a QR that configures the iPhone app in one scan: aha://config?backup=http://<mac-ip>:<port>&token=..."""
+    import tempfile
+    import urllib.parse
+    port = int(os.environ.get("AHA_PORT", "8765"))
+    ip = a.ip or subprocess.run(["ipconfig", "getifaddr", "en0"], capture_output=True, text=True).stdout.strip()
+    if not ip:
+        sys.exit("no IP on en0; pass --ip")
+    url = "aha://config?" + urllib.parse.urlencode({"backup": f"http://{ip}:{port}", "token": storage.load_token()})
+    if not shutil.which("qrencode"):
+        sys.exit("qrencode not found: brew install qrencode")
+    out = Path(tempfile.gettempdir()) / "aha_setup_qr.png"
+    subprocess.run(["qrencode", "-s", "10", "-o", str(out), url], check=True)
+    subprocess.run(["open", str(out)])
+    print(f"backup=http://{ip}:{port} (+token). iPhone: Camera -> scan -> open in Aha. QR: {out}", file=sys.stderr)
+
+
+def cmd_status(a):
+    s = storage.Store(storage.data_root())
+    print(f"data dir: {s.root}\ntotal items: {len(s.items)}")
+    for k, v in sorted(s.counts().items()):
+        print(f"  {k:12s} {v}")
+    print("last 10:")
+    for m in s.recent(10):
+        print(f"  {m['received_at'][:19]} {m['id']} {m['source']:7s} {m['transcription_status']}")
+
+
+def cmd_today(a):
+    s = storage.Store(storage.data_root())
+    day = a.date or datetime.now().strftime("%Y-%m-%d")
+    for m in s.on_date(day):
+        t = s.transcript_text(m)
+        if t and t.strip():
+            print(f"[{m['recorded_at'][11:19]}] {t.strip()}")
+
+
+def cmd_reprocess(a):
+    from worker import AsrBackend, Worker
+    s = storage.Store(storage.data_root())
+    w = Worker(s, asr=AsrBackend(backend=a.backend))
+    since = a.since
+    n = {"written": 0, "exists": 0, "silent": 0, "skipped": 0, "error": 0}
+    for m in sorted(s.items.values(), key=lambda m: m["recorded_at"]):
+        if m["recorded_at"][:10] < since:
+            continue
+        try:
+            r = w.reprocess(m["id"], backend=a.backend)
+        except Exception as e:
+            r = "error"
+            print(f"  {m['id']}: {e!r}", file=sys.stderr)
+        n[r] += 1
+    print(json.dumps(n))
+
+
+def cmd_retry(a):
+    """Reset attempt counters. Prefers the live server API (so its in-memory index stays correct)."""
+    port = int(os.environ.get("AHA_PORT", "8765"))
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/items/{a.id}/retry", method="POST",
+                                     headers={"Authorization": "Bearer " + storage.load_token()})
+        print(urllib.request.urlopen(req, timeout=5).read().decode())
+        return
+    except urllib.error.HTTPError as e:
+        sys.exit(f"retry failed: HTTP {e.code}")
+    except Exception:
+        pass
+    s = storage.Store(storage.data_root())
+    if not s.get(a.id):
+        sys.exit("not found")
+    s.update(a.id, transcription_status="pending", attempts=0, lifetime_attempts=0, error=None)
+    print("server not reachable; meta reset on disk, will be picked up at next server start")
+
+
+def cmd_doctor(a):
+    bad = [0]
+
+    def rep(level, name, msg):
+        print(f"[{level:4s}] {name}: {msg}")
+        if level == "FAIL":
+            bad[0] += 1
+
+    port = int(os.environ.get("AHA_PORT", "8765"))
+    uid = os.getuid()
+    r = subprocess.run(["launchctl", "print", f"gui/{uid}/com.aha.server"], capture_output=True, text=True)
+    if r.returncode == 0:
+        st = next((l.strip() for l in r.stdout.splitlines() if l.strip().startswith("state =")), "state = ?")
+        rep("OK", "launchd", f"com.aha.server loaded ({st})")
+    else:
+        rep("WARN", "launchd", "com.aha.server not loaded (fine if running in foreground)")
+    try:
+        h = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/v1/health", timeout=3).read())
+        rep("OK", "health", json.dumps(h))
+    except Exception as e:
+        rep("FAIL", "health", f"port {port} unreachable: {e!r}")
+    root = storage.data_root()
+    free = shutil.disk_usage(root if root.exists() else Path.home()).free / 1e9
+    rep("OK" if free >= 10 else "WARN", "disk", f"{free:.1f} GB free" + ("" if free >= 10 else " (<10GB)"))
+    s = storage.Store(root)
+    c = s.counts()
+    pend = sum(c.get(k, 0) for k in ("pending", "processing"))
+    rep("OK" if pend < 20 else "WARN", "queue", f"{pend} pending/processing")
+    f, fp = c.get("failed", 0), c.get("failed_permanent", 0)
+    rep("OK" if f + fp == 0 else "WARN", "failed", f"failed={f} failed_permanent={fp}  (fix: aha retry <id>)")
+    if s.items:
+        last = max(s.items.values(), key=lambda m: m["received_at"])
+        age = datetime.now().astimezone() - datetime.fromisoformat(last["received_at"])
+        rep("OK", "last item", f"{last['id']} received {age.total_seconds() / 3600:.1f}h ago")
+    else:
+        rep("WARN", "last item", "no items yet")
+    try:
+        import aha_asr  # noqa
+        rep("OK", "aha_asr", "importable")
+    except Exception as e:
+        rep("WARN", "aha_asr", f"not importable ({e!r}); worker will fail ASR until fixed")
+    ts = next((p for p in ("/Applications/Tailscale.app/Contents/MacOS/Tailscale", shutil.which("tailscale")) if p and Path(p).exists()), None)
+    if ts:
+        r = subprocess.run([ts, "status"], capture_output=True, text=True, timeout=10)
+        first = (r.stdout or r.stderr).strip().splitlines()[:1]
+        rep("OK" if r.returncode == 0 else "WARN", "tailscale", first[0] if first else f"exit {r.returncode}")
+    else:
+        rep("INFO", "tailscale", "not installed")
+    sys.exit(1 if bad[0] else 0)
+
+
+def cmd_transcribe(a):
+    """Transcribe local audio/video files in-process (no server needed)."""
+    import time
+    import aha_asr
+    from aha_asr import audio
+    if a.no_vad:  # trust the user: skip the speech gate, treat whole file as speech
+        audio.passes_gate = lambda pcm, ranges: True
+        audio.speech_ranges = lambda pcm: [(0.0, len(pcm) / audio.SR)]
+    print("[aha] first run loads the model (a few seconds)...", file=sys.stderr)
+    outs, results, rc = [], [], 0
+    for f in a.files:
+        if not Path(f).expanduser().exists():
+            print(f"[aha] not found: {f}", file=sys.stderr)
+            rc = 1
+            continue
+        t0 = time.time()
+        try:
+            r = aha_asr.transcribe(str(Path(f).expanduser()), backend=a.backend, language=a.lang)
+        except Exception as e:
+            print(f"[aha] {f}: failed: {e!r}", file=sys.stderr)
+            rc = 1
+            continue
+        el = time.time() - t0
+        dur = r.get("duration_s") or 0
+        rtf = f"{el / dur:.3f}" if dur else "n/a"
+        note = "" if r["text"].strip() else "  (no speech detected; try --no-vad if you know there is speech)"
+        print(f"[aha] {Path(f).name}: {dur:.1f}s audio in {el:.2f}s, RTF={rtf}, backend={r['backend']}, model={r['model']}{note}", file=sys.stderr)
+        results.append({"file": f, **r})
+        outs.append((f, r["text"].strip()))
+    if a.json:
+        body = json.dumps(results if len(results) != 1 else results[0], ensure_ascii=False, indent=2)
+    elif len(outs) > 1:
+        body = "\n\n".join(f"=== {f} ===\n{t}" for f, t in outs)
+    else:
+        body = outs[0][1] if outs else ""
+    print(body)
+    if a.output:
+        Path(a.output).expanduser().write_text(body + "\n", encoding="utf-8")
+        print(f"[aha] written to {a.output}", file=sys.stderr)
+    if a.copy and outs:
+        subprocess.run(["pbcopy"], input=body.encode("utf-8"), check=False)
+        print("[aha] copied to clipboard", file=sys.stderr)
+    sys.exit(rc)
+
+
+def cmd_claude_kill(a):
+    """Stop a voice-triggered Claude run: SIGTERM, SIGKILL after 10 s, status -> killed."""
+    sys.path.insert(0, str(HERE.parent / "pipeline"))
+    import claude_tasks
+    sys.exit(claude_tasks.kill_run(a.which))
+
+
+def cmd_claude_runs(a):
+    sys.path.insert(0, str(HERE.parent / "pipeline"))
+    import claude_tasks
+    for r in claude_tasks.read_runs()[-a.n:]:
+        print(f"{r['started']} {r['uuid']} {r.get('kind','?'):6s} {r['status']:8s} rc={r.get('exit_code')} rec={r['recording_id']} {r['log_path']}")
+
+
+def cmd_last(a):
+    inbox = Path.home() / "aha_data" / "inbox"
+    latest, prio = inbox / "LATEST.txt", inbox / "priority.md"
+    shown = False
+    if latest.exists() and latest.read_text().strip():
+        print("== LATEST ==")
+        print(latest.read_text().strip())
+        shown = True
+    if prio.exists() and prio.read_text().strip():
+        text = prio.read_text().strip()
+        blocks = [b for b in text.split("\n\n") if b.strip()]
+        print(f"== priority.md (last {a.n}) ==")
+        print("\n\n".join(blocks[-a.n:]))
+        shown = True
+    if not shown:
+        print(f"[aha] no {latest} / {prio} yet (they are written by the server for priority/quick captures); "
+              "falling back to newest transcripts today:", file=sys.stderr)
+        s = storage.Store(storage.data_root())
+        day = datetime.now().strftime("%Y-%m-%d")
+        rows = []
+        for m in s.on_date(day):
+            t = s.transcript_text(m)
+            if t and t.strip():
+                rows.append(f"[{m['recorded_at'][11:19]}] {t.strip()}")
+        if not rows:
+            sys.exit("[aha] no transcripts today either. Try `aha status` / `aha check`.")
+        print("\n".join(rows[-a.n:]))
+
+
+def _health(url):
+    """Return (ok, detail). ok only if JSON body."""
+    try:
+        return True, json.loads(urllib.request.urlopen(url, timeout=3).read())
+    except urllib.error.HTTPError as e:
+        return False, f"HTTP {e.code}"
+    except Exception as e:
+        return False, repr(e)
+
+
+def cmd_check(a):
+    import time
+    bad = [0]
+
+    def rep(level, name, msg):
+        print(f"[{level:4s}] {name}: {msg}", flush=True)
+        if level == "FAIL":
+            bad[0] += 1
+
+    port = int(os.environ.get("AHA_PORT", "8765"))
+    # 1. server reachable (detect shadowing listener on 127.0.0.1)
+    ok, d = _health(f"http://127.0.0.1:{port}/v1/health")
+    if ok:
+        rep("OK", "server", f"127.0.0.1:{port} {json.dumps(d)}")
+    else:
+        ip = subprocess.run(["ipconfig", "getifaddr", "en0"], capture_output=True, text=True).stdout.strip()
+        ok2, d2 = _health(f"http://{ip}:{port}/v1/health") if ip else (False, "no en0 ip")
+        pids = subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN"], capture_output=True, text=True).stdout.strip()
+        shadow = [l.split() for l in pids.splitlines() if f"127.0.0.1:{port}" in l]
+        sh = f"PID {shadow[0][1]}" if shadow else "unknown PID"
+        if ok2:
+            rep("WARN", "server", f"127.0.0.1:{port} did not return JSON health ({d}) but {ip}:{port} does: {json.dumps(d2)}. "
+                f"A different process ({sh}) is shadowing localhost:{port}; listeners:\n{pids}\n"
+                "       fix: kill the stray one (e.g. python -m http.server) so localhost works")
+        else:
+            rep("FAIL", "server", f"{port} not serving aha health on localhost ({d}) or {ip or 'LAN'} ({d2})\n{pids}")
+    # 2. launchd
+    uid = os.getuid()
+    for job in ("com.aha.server", "com.aha.dispatch"):
+        r = subprocess.run(["launchctl", "print", f"gui/{uid}/{job}"], capture_output=True, text=True)
+        if r.returncode == 0:
+            st = next((l.strip() for l in r.stdout.splitlines() if l.strip().startswith("state =")), "state = ?")
+            pid = next((l.strip() for l in r.stdout.splitlines() if l.strip().startswith("pid =")), "")
+            rep("OK", "launchd", f"{job} loaded ({st} {pid})")
+        else:
+            rep("WARN", "launchd", f"{job} not loaded")
+    # 3. backends + model cache
+    import aha_asr
+    avail = aha_asr.list_backends()
+    rep("OK" if avail else "FAIL", "backends", f"importable: {avail}; default: {aha_asr.default_backend() if avail else '-'}")
+    cache = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface")) / "hub"
+    models = sorted(p.name.replace("models--", "").replace("--", "/") for p in cache.glob("models--*")) if cache.exists() else []
+    rep("OK" if models else "WARN", "model cache", f"{len(models)} in {cache}: {', '.join(models) or 'none'}")
+    # 4. real transcription
+    sample = HERE.parent / "asr" / "samples" / "zh.m4a"
+    ref = sample.with_suffix("").with_suffix(".ref.txt")
+    try:
+        t0 = time.time()
+        r = aha_asr.transcribe(str(sample), language="zh")
+        el = time.time() - t0
+        txt = r["text"].strip()
+        dur = r.get("duration_s") or 0
+        if txt:
+            rep("OK", "transcribe", f"{r['backend']}/{r['model']} {dur:.1f}s audio in {el:.2f}s (RTF {el / max(dur, 1e-6):.2f}): {txt[:80]}")
+        else:
+            rep("FAIL", "transcribe", f"empty text from {sample.name}")
+    except Exception as e:
+        rep("FAIL", "transcribe", repr(e))
+    print("RESULT:", "FAIL" if bad[0] else "model is working")
+    sys.exit(1 if bad[0] else 0)
+
+
+def main():
+    p = argparse.ArgumentParser(prog="aha")
+    sp = p.add_subparsers(dest="cmd", required=True)
+    x = sp.add_parser("serve"); x.add_argument("--host"); x.add_argument("--port", type=int); x.set_defaults(f=cmd_serve)
+    sp.add_parser("status").set_defaults(f=cmd_status)
+    sp.add_parser("token").set_defaults(f=cmd_token)
+    q = sp.add_parser("qr", help="show a QR that configures the iPhone app (backup URL + token)")
+    q.add_argument("--ip", help="Mac IP to put in the backup URL (default: en0)")
+    q.set_defaults(f=cmd_qr)
+    x = sp.add_parser("today"); x.add_argument("--date"); x.set_defaults(f=cmd_today)
+    x = sp.add_parser("reprocess"); x.add_argument("--since", required=True, help="YYYY-MM-DD")
+    x.add_argument("--backend"); x.set_defaults(f=cmd_reprocess)
+    sp.add_parser("doctor").set_defaults(f=cmd_doctor)
+    x = sp.add_parser("retry"); x.add_argument("id"); x.set_defaults(f=cmd_retry)
+    x = sp.add_parser("transcribe", help="transcribe audio/video files locally (no server needed)")
+    x.add_argument("files", nargs="+"); x.add_argument("--backend"); x.add_argument("--lang", default=None)
+    x.add_argument("--json", action="store_true"); x.add_argument("--copy", action="store_true")
+    x.add_argument("--no-vad", action="store_true", help="skip speech gate (file known to contain speech)")
+    x.add_argument("-o", "--output"); x.set_defaults(f=cmd_transcribe)
+    x = sp.add_parser("last", help="latest priority transcript(s)"); x.add_argument("-n", type=int, default=1); x.set_defaults(f=cmd_last)
+    x = sp.add_parser("claude-kill", help="kill a voice-triggered Claude run (uuid prefix or 'last')"); x.add_argument("which"); x.set_defaults(f=cmd_claude_kill)
+    x = sp.add_parser("claude-runs", help="list voice-triggered Claude runs"); x.add_argument("-n", type=int, default=10); x.set_defaults(f=cmd_claude_runs)
+    sp.add_parser("check", help="end-to-end: is the model working now").set_defaults(f=cmd_check)
+    a = p.parse_args()
+    a.f(a)
+
+
+if __name__ == "__main__":
+    main()

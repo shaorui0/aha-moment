@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aha_asr"
+version = "0.1.0"
+description = "Pluggable local ASR for Aha Moment"
+requires-python = ">=3.11"
+dependencies = ["numpy", "psutil"]
+
+[tool.setuptools]
+packages = ["aha_asr", "aha_asr.backends"]

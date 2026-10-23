@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.aha.server</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/.venv/bin/python</string>
+    <string>/Users/rshao/work/context-infrastructure/projects/aha_moment/ops/aha</string>
+    <string>serve</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AHA_DATA_DIR</key><string>/Users/rshao/aha_data</string>
+    <key>AHA_PORT</key><string>8765</string>
+    <key>PATH</key><string>/Users/rshao/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>AHA_CLAUDE_BIN</key><string>/Users/rshao/.local/bin/claude</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>/Users/rshao/Library/Logs/aha-server.log</string>
+  <key>StandardErrorPath</key><string>/Users/rshao/Library/Logs/aha-server.log</string>
+</dict>
+</plist>

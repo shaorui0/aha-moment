@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aha Moment 介绍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf8f4; --surface:#ffffff; --text:#25221e; --muted:#6b655c; --line:#e6e1d8;
+  --accent:#b4501f; --accent-soft:#f6e7dc; --ok:#2f6b4f; --warn:#8a5a00; --warn-soft:#f8efd9;
+  --code-bg:#f0ece4;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#171614; --surface:#211f1c; --text:#ece7de; --muted:#a39c90; --line:#35322d;
+    --accent:#e8895a; --accent-soft:#3a2a21; --ok:#7cc4a0; --warn:#e3b455; --warn-soft:#33291a;
+    --code-bg:#2a2824;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  overflow-x:hidden}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 64px}
+h1,h2,h3{font-family:"Noto Serif SC","Songti SC",serif;line-height:1.35;margin:0}
+section{padding-top:48px}
+h2{font-size:1.5rem;margin-bottom:6px}
+.lead{color:var(--muted);margin:0 0 20px}
+p{margin:0 0 12px}
+.hero{padding:56px 0 8px}
+.hero .tag{color:var(--accent);font-size:.85rem;letter-spacing:.08em;margin-bottom:10px}
+.hero h1{font-size:clamp(1.9rem,6vw,2.6rem)}
+.hero p.sub{font-size:1.1rem;color:var(--muted);margin-top:16px}
+.hero .why{margin-top:20px;padding:14px 16px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0}
+nav{margin-top:24px;display:flex;flex-wrap:wrap;gap:8px}
+nav a{font-size:.85rem;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+nav a:hover{color:var(--accent);border-color:var(--accent)}
+.flow{display:flex;flex-direction:column;gap:0;margin:20px 0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.step .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.step b{display:block}
+.step span{color:var(--muted);font-size:.93rem}
+.arrow{text-align:center;color:var(--muted);line-height:1.6;font-size:1.1rem}
+.where{display:flex;gap:8px;flex-wrap:wrap;font-size:.8rem;margin-top:10px}
+.pill{border:1px solid var(--line);border-radius:999px;padding:1px 10px;color:var(--muted);background:var(--surface)}
+.pill.phone{color:var(--accent);border-color:var(--accent)}
+@media(min-width:720px){
+  .flow{flex-direction:row;align-items:stretch}
+  .step{flex:1;flex-direction:column;gap:8px}
+  .arrow{align-self:center;padding:0 6px}
+  .arrow::before{content:"→"}
+  .arrow span{display:none}
+}
+@media(max-width:719px){.arrow::before{content:"↓"}}
+.cards{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:720px){.cards{grid-template-columns:1fr 1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{font-size:1.15rem;margin-bottom:4px}
+.card .when{color:var(--accent);font-size:.88rem;margin-bottom:10px}
+.card ul{margin:0;padding-left:1.2em}
+.card li{margin-bottom:6px}
+.day{border-left:2px solid var(--line);margin:8px 0 0 6px;padding-left:18px}
+.day .t{position:relative;margin-bottom:16px}
+.day .t::before{content:"";position:absolute;left:-24px;top:.65em;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.day time{display:block;font-size:.82rem;color:var(--muted)}
+.priv{display:grid;gap:12px}
+@media(min-width:720px){.priv{grid-template-columns:1fr 1fr}}
+.box{border-radius:12px;padding:14px 16px;border:1px solid var(--line);background:var(--surface)}
+.box.local{border-color:var(--ok)}
+.box.cloud{border-color:var(--warn);background:var(--warn-soft)}
+.box h3{font-size:1.05rem;margin-bottom:6px}
+.box.local h3{color:var(--ok)}
+.box.cloud h3{color:var(--warn)}
+.box ul{margin:0;padding-left:1.2em}
+.box li{margin-bottom:4px}
+dl{margin:0}
+dt{font-weight:600;margin-top:14px}
+dd{margin:2px 0 0;color:var(--muted)}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.faq summary{cursor:pointer;font-weight:600}
+.faq details p{margin:8px 0 0;color:var(--muted)}
+.lim{background:var(--warn-soft);border:1px solid var(--warn);border-radius:12px;padding:14px 16px}
+.lim ul{margin:0;padding-left:1.2em}
+.lim li{margin-bottom:8px}
+.road{margin-top:14px;border:1px dashed var(--line);border-radius:12px;padding:14px 16px;color:var(--muted)}
+.road h3{font-size:1rem;color:var(--text);margin-bottom:6px}
+.road ul{margin:0;padding-left:1.2em}
+code{font:.88em ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code-bg);padding:1px 6px;border-radius:4px;word-break:break-all}
+.badge{display:inline-block;font-size:.75rem;padding:0 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
+.badge.real{background:var(--ok);color:var(--bg)}
+.badge.soon{background:var(--muted);color:var(--bg)}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="tag">个人语音捕获系统</div>
+  <h1>Aha Moment</h1>
+  <p class="sub">手机放口袋里，想到什么直接说。录音和语音识别都在自己的 Mac 上完成，文字最后进到你的知识库。</p>
+  <div class="why">想法总在解锁手机的那几秒里溜走。掏手机、解锁、找 App、点录音，走完这一套，刚才那句话已经想不起来了。这个东西就是把这几秒去掉。</div>
+  <nav>
+    <a href="#how">怎么运作</a><a href="#modes">两种用法</a><a href="#day">一天的样子</a>
+    <a href="#privacy">隐私</a><a href="#see">你会看到什么</a><a href="#faq">常见问题</a><a href="#limits">限制</a>
+  </nav>
+</header>
+
+<section id="how">
+  <h2>它是怎么运作的</h2>
+  <p class="lead">一共五步，除了第一步，你都不用管。</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><b>录音</b><span>iPhone 上点一下开始，之后锁屏、放口袋都行。</span></div></div>
+    <div class="arrow"><span></span></div>
+    <div class="step"><div class="n">2</div><div><b>切片</b><span>自动每 60 秒切成一小段，先存在手机里。</span></div></div>
+    <div class="arrow"><span></span></div>
+    <div class="step"><div class="n">3</div><div><b>回家自动上传</b><span>手机和 Mac 在同一网络时传过去，没网就排队。</span></div></div>
+    <div class="arrow"><span></span></div>
+    <div class="step"><div class="n">4</div><div><b>Mac 本地转写</b><span>Mac 上跑 Whisper，把声音变成文字。</span></div></div>
+    <div class="arrow"><span></span></div>
+    <div class="step"><div class="n">5</div><div><b>进入知识库</b><span>每段录音变成一个纯文字文件，放进你个人工作区的每日记录。</span></div></div>
+  </div>
+  <div class="where"><span class="pill phone">1 – 2 在手机上</span><span class="pill">3 – 5 在你自己的 Mac 上</span></div>
+  <p style="margin-top:14px">一个小原则：手机要等 Mac 确认收到，才会删掉那段录音。所以中途断网、关机，片段都不会丢。原始音频一直保留，文字只是从音频算出来的，哪天换个更准的模型可以重算。</p>
+</section>
+
+<section id="modes">
+  <h2>只有一个按钮</h2>
+  <p class="lead">点一下开始，再点一下停止。录一整天，还是只说几句，都由你决定。</p>
+  <div class="cards">
+    <div class="card">
+      <h3>点按开始 / 点按停止</h3>
+      <div class="when">适合：开会、散步、想到一件事，什么场合都一样</div>
+      <ul>
+        <li>点一下大按钮开始，再点一下停止，录音中会显示已录时长。</li>
+        <li>设计上可以连续录数小时，锁屏、切到别的 App 都不会停（已实测锁屏连续录音；整晚长时间测试还没做）。</li>
+        <li>一次开始到停止算一条录音，在 Mac 上得到一个文本文件。</li>
+        <li>中间自动切成 60 秒一段上传，没有网络也照常录，回到同一网络后自动补传。</li>
+        <li>空房间、空调声不会被硬转成一堆莫名其妙的字。</li>
+        <li>想马上拿到文字：在“Recordings”里点那条录音左边的云朵按钮。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="day">
+  <h2>一天的样子</h2>
+  <p class="lead">举个例子，不是固定流程。</p>
+  <div class="day">
+    <div class="t"><time>早上出门</time>点一下开始录音，手机放口袋。路上想到一个点子，直接自言自语说出来。</div>
+    <div class="t"><time>中午</time>想到下午要给同事发个方案，直接说一句“下午把方案发给同事”，录音照常继续。</div>
+    <div class="t"><time>下午</time>手机收到一个电话，录音被打断，弹出通知。通话结束后点一下通知，录音接着继续。</div>
+    <div class="t"><time>回家</time>手机连上家里 Wi-Fi，白天攒下的片段自动传到 Mac。你什么都不用点。</div>
+    <div class="t"><time>晚上</time>在 Mac 上看今天说了什么，中午那一句也在里面。需要的话，让它生成一份当天的时间线摘要。</div>
+  </div>
+</section>
+
+<section id="privacy">
+  <h2>隐私：什么留在本地，什么会出去</h2>
+  <p class="lead">录音和语音识别不出你的 Mac。但有两个例外，是你主动选的，得说清楚。</p>
+  <div class="priv">
+    <div class="box local">
+      <h3>只留在你自己的 Mac</h3>
+      <ul>
+        <li>所有录音音频</li>
+        <li>语音转文字（Whisper 在本机跑）</li>
+        <li>转写出来的全部文字</li>
+        <li>待办、笔记等分发结果</li>
+      </ul>
+    </div>
+    <div class="box cloud">
+      <h3>只有你选了才会发给 Claude</h3>
+      <ul>
+        <li>你说了“问 Claude……”，那句问题的文字会发过去。</li>
+        <li>你让它生成“AI 摘要”时，当天的转写文字会发过去。这个功能默认没开。</li>
+      </ul>
+      <p style="margin:8px 0 0;font-size:.93rem">发出去的是文字，不是音频。</p>
+    </div>
+  </div>
+  <p style="margin-top:14px">另外，录音时 iPhone 状态栏会一直亮着橙色小点，这是系统强制的提示，关不掉，也不该关。如果旁边有别人，记得先打个招呼。</p>
+</section>
+
+<section id="see">
+  <h2>你会看到什么</h2>
+
+  <h3 style="font-size:1.1rem;margin-top:20px">手机上的通知</h3>
+  <p class="lead" style="margin-bottom:8px">状态变化都会提醒你，不用时不时打开 App 确认。</p>
+  <ul>
+    <li>你打开或关闭录音时</li>
+    <li>来电或 Siri 把录音打断时</li>
+    <li>打断结束、录音恢复时</li>
+    <li>App 被关掉时（App 被杀后，大约 3 分钟内也会有提醒）</li>
+  </ul>
+
+  <h3 style="font-size:1.1rem;margin-top:24px">手机上的 Recordings 页</h3>
+  <p>每次从开始到停止算一条录音，按时间倒序排。点进去可以播放，拖进度条，像语音备忘录一样。已经传走的录音在手机上保留 7 天，之后清理（Mac 上的还在）。</p>
+
+  <h3 style="font-size:1.1rem;margin-top:24px">Mac 上的今日转写</h3>
+  <p>带时间的文字列表，每行对应一段话。也可以在浏览器里打开本机的网页，点一条就能听原声，对照一下有没有听错。待办、笔记、Claude 的回答各自在自己的文件里。</p>
+</section>
+
+<section id="faq" class="faq">
+  <h2>常见问题</h2>
+  <p class="lead">&nbsp;</p>
+  <details><summary>没有网络能录吗？</summary><p>能。录音本身不需要网络，片段先存在手机里排队，等手机和 Mac 回到同一网络再自动补传。</p></details>
+  <details><summary>手机锁屏会停吗？</summary><p>不会。锁屏、放口袋、切到别的 App 都继续录。唯一要避开的是在 App 切换器里把它上划关掉，那会停止录音。</p></details>
+  <details><summary>打电话或叫 Siri 会断吗？</summary><p>会断一下。iOS 在这种情况下常常不让 App 在后台自己恢复麦克风，所以你会收到通知，点一下通知就接着录。这中间会有一段空档。</p></details>
+  <details><summary>手机重启之后呢？</summary><p>解锁手机，手动打开一次 App，录音才会恢复。</p></details>
+  <details><summary>Mac 要一直开着吗？</summary><p>转写发生在 Mac 上，所以要开着。Mac 睡着或合盖时，手机照常录，片段先排队，Mac 回来再补传。</p></details>
+  <details><summary>换新手机怎么办？</summary><p>要重新装一遍 App 并配对，有一份逐步清单：<code>docs/SETUP_IPHONE.md</code>。</p></details>
+  <details><summary>App 突然打不开了？</summary><p>多半是免费签名过期了（7 天一次），见下面“限制”里的重装办法。</p></details>
+</section>
+
+<section id="limits">
+  <h2>限制与路线图</h2>
+  <p class="lead">先说不好的。这是自己用的工具，有几处还很糙。</p>
+  <div class="lim">
+    <span class="badge real">现状</span><b>目前的限制</b>
+    <ul style="margin-top:10px">
+      <li><b>只在同一网络才上传。</b>现在没有接 Tailscale 之类的远程工具，所以手机和 Mac 必须在同一个 Wi-Fi，或者 Mac 连着手机热点。出门在外片段会排队，回来补传。换网络后，App 里填的 Mac 地址也要改。</li>
+      <li><b>每 7 天要重装一次。</b>用的是苹果免费的开发者签名，7 天过期。手机插上 Mac，解锁，跑一个脚本就好，里面的录音和队列不会丢。付费开发者账号（每年 99 美元）可以免掉。命令是 <code>ops/ios_reinstall.sh</code>。</li>
+      <li><b>来电和 Siri 之后可能不会自动恢复。</b>要点通知，中间会有空档。</li>
+      <li><b>Mac 必须开着</b>，转写才会进行。</li>
+      <li><b>还没用真人长时间说话做过准确率测试。</b>目前的测试用的是合成语音，所以转写准不准，我现在不敢打包票。</li>
+    </ul>
+  </div>
+  <div class="road">
+    <h3><span class="badge soon">还没做</span>路线图（想法，不是承诺）</h3>
+    <ul>
+      <li>跨天、跨周找出反复出现的话题。现在的每日摘要只是一条时间线。</li>
+      <li>自动更新知识库，而不只是写一份摘要。</li>
+      <li>出门在外也能上传（接 Tailscale）。</li>
+      <li>用真人语音评测转写准确率，再决定要不要换模型。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  这页是给使用者看的概览。搭建、运维和排障细节在同一项目的 <code>docs/</code> 目录里：SETUP_MAC、SETUP_IPHONE、OPERATIONS。
+</footer>
+
+</div>
+</body>
+</html>

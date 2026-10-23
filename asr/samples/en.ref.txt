@@ -1,0 +1,1 @@
+Let's move the deployment to Thursday and check the latency dashboard afterwards.

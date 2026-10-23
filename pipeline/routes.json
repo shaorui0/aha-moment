@@ -1,0 +1,9 @@
+{
+  "_doc": "First matching rule wins. prefixes: utterance must START with one (case-insensitive; trailing ,:，：、 and spaces are stripped, ASCII prefixes need a word boundary); the prefix is removed from the body. keywords: utterance CONTAINS it anywhere (body unchanged). action: append (target file under inbox/) | ask (claude -p, answer to inbox/answers/<id>.md). Anything unmatched goes to default.",
+  "rules": [
+    {"name": "todo",  "prefixes": ["待办", "代办", "todo", "to do", "to-do"], "action": "append", "target": "todo.md",  "format": "- [ ] {body}  <!-- {id} {time} -->"},
+    {"name": "note",  "prefixes": ["记一下", "记录一下", "note"],             "action": "append", "target": "notes.md", "format": "- {time} {body}  <!-- {id} -->"},
+    {"name": "ask",   "prefixes": ["问 claude", "问claude", "问 cloud", "ask claude", "ask"], "action": "ask"}
+  ],
+  "default": {"action": "append", "target": "unrouted.md", "format": "- {time} {body}  <!-- {id} -->"}
+}
