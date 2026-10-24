@@ -20,3 +20,6 @@ DerivedData/
 # e2e scratch (generated corpus audio, temp outputs)
 e2e/.work/
 mac/build/
+
+# private leak patterns (employer names etc.)
+.leak_patterns.local
