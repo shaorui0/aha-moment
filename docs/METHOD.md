@@ -2,7 +2,7 @@
 
 Aha Moment is the capture end of a personal context-engineering loop. The recorder is deliberately boring (one button). The method is everything after it: how a sentence becomes text, how text becomes organized knowledge, and how what survives becomes the starting context of the next agent session.
 
-This document is the model. `README.md` (pipeline table) stays the single source of truth for what runs today; `docs/DEVELOPER.md` has the code-level contracts; `docs/REQUIREMENTS.md` says what the system must do and what may never enter the repo.
+This document is the model. `README.md` (pipeline table) stays the single source of truth for what runs today; `docs/DEVELOPER.md` has the code-level contracts; `docs/REQUIREMENTS.md` says what the system must do and what may never enter the repo; `docs/PROCESS.md` records how each change was made and what has changed.
 
 **中文要点**：这条链路不是「录音 -> 文字」，而是一个飞轮：说话 -> 本机转写 -> 一段一个文件 -> 整理（纠错、无损分主题、只追加落地）-> 记忆（L1/L2）与规则（L3）-> 下一个 session 一开始就读到 -> 干活 -> 每晚观测、每周反思 -> 站得住的 pattern 回灌规则。实线是已经在跑的，虚线是方向。
 
@@ -60,7 +60,7 @@ A rule that nothing enforces is a wish. Each row names the enforcer.
 | I1 | Audio is the source of truth. A transcript is a recomputable derived artifact. | Any model error is fixable only if the input survives. | `server/storage.py` `add_transcript`; `aha reprocess` writes a new file |
 | I2 | A transcript is never overwritten. A new model writes a new file. | Comparing models needs both outputs. | `add_transcript` skips an existing slug (`server/tests/test_server.py::test_reprocess_adds_second_file`) |
 | I3 | The phone does not delete a chunk before the server ACK (200/201 with matching sha256). | A killed app or a dead network must not lose speech. | iOS `UploadQueue`; `test_upload_201_200_409_422` covers the server side |
-| I4 | One recording is one file, and the file holds only text (no title, no front matter). Same minute gets `-2`. | Stable, greppable unit; nothing to maintain by hand; LLM steps cannot be confused by metadata. | `pipeline/export_to_context.py`; `pipeline/tests/test_export.py` (an invariants test is added in c0002) |
+| I4 | One recording is one file, and the file holds only text (no title, no front matter). Same minute gets `-2`. | Stable, greppable unit; nothing to maintain by hand; LLM steps cannot be confused by metadata. | `pipeline/export_to_context.py`; `pipeline/tests/test_export.py`, `pipeline/tests/test_export_invariants.py` |
 | I5 | One button is the only entry. No category, no title, no mode choice at capture time. | Friction is cost: every extra step lowers how often you record. | Convention, reviewed per change; no enforcer exists |
 | I6 | LLM steps read enhanced or transcribed text only. They never read audio and never write the source. | Keeps the loop auditable and cheap; the observer by design ignores `daily_records/` content. | Pipeline code reads text files; the observer prompt |
 | I7 | Silence never reaches the ASR. | Whisper hallucinates text on silence. | VAD gate in `asr/aha_asr` (`test_silent_skips_asr`) |

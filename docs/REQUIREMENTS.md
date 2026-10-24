@@ -34,8 +34,8 @@
 | D1 | `docs/METHOD.md`：飞轮图、步骤表、三层记忆、不变量、失败模式、「How this proves context engineering」 | 四部分齐全；实线/虚线区分保留 | R1–R13 |
 | D2 | `docs/REQUIREMENTS.md`（本文） | 含数据边界 | R15 |
 | D3 | `tools/check_rules.py` 泄漏扫描 | 输出 `check_rules: OK`；植入泄漏时失败 | §4 |
-| D4 | export 不变量测试（pipeline/tests 下，c0002 新增） | pytest 通过 | R5 R6 |
-| D5 | aha-change-loop skill（.claude/skills 下）与 docs 下的 PROCESS.md（c0002 新增） | Progress 表有行 | R16 |
+| D4 | export 不变量测试 `pipeline/tests/test_export_invariants.py`（c0002） | pytest 通过 | R5 R6 |
+| D5 | `.claude/skills/aha-change-loop/SKILL.md` 与 `docs/PROCESS.md`（c0002） | Progress 表有行 | R16 |
 
 ## 4. 数据边界（硬约束）
 
