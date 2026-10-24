@@ -88,6 +88,8 @@ iPhone (AhaMoment app, SwiftUI)             Mac (launchd 常驻)
 | **使用者**（想知道这是什么、怎么用） | [docs/user/index.html](docs/user/index.html)（浏览器打开） | 它解决什么问题、怎么运作、Ambient 与 Quick 两种用法、隐私边界、会收到哪些通知、常见问题、限制与路线图 |
 | **开发者**（要改代码 / 扩展） | [docs/DEVELOPER.md](docs/DEVELOPER.md) | 架构与端到端数据流、不变量与契约、API 表、磁盘布局、iOS 状态机与看门狗、ASR 过滤层、开发与测试流程 |
 
+方法与过程（模型、需求、每个改动的 Progress 表）：[docs/METHOD.md](docs/METHOD.md)、[docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)、[docs/PROCESS.md](docs/PROCESS.md)
+
 部署与运维：
 
 - [docs/SETUP_MAC.md](docs/SETUP_MAC.md)：新 Mac 从零部署（含 Xcode 安装路径）
