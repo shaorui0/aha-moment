@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>c0001 Method and requirements</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">c0001 Method and requirements</h1>
+</header>
+<h1 id="c0001-method-and-requirements">c0001 Method and
+requirements</h1>
+<p>Aha Moment captured speech well, but the repo did not say why it is
+built this way, what must never break, or how a sentence becomes the
+starting context of an agent session. This change writes that layer down
+and adds a scan that keeps personal data out.</p>
+<h2 id="what-changed">What changed</h2>
+<ul>
+<li><code>docs/METHOD.md</code>: flywheel diagram, step table (10
+steps), three memory layers, 10 invariants with enforcers, 10 failure
+modes, and a section on why this is context engineering.</li>
+<li><code>docs/REQUIREMENTS.md</code>: 16 requirements distilled from
+<code>PLAN.md</code> and <code>README.md</code>, including the data
+boundary.</li>
+<li><code>tools/check_rules.py</code>: leak scan (public patterns,
+private patterns from a gitignored file, home paths in the method layer,
+audio and transcript files in the tree).</li>
+</ul>
+<h2 id="the-model-in-one-picture">The model in one picture</h2>
+<p>Solid arrows run today; dashed arrows are direction.</p>
+<div style="overflow-x:auto">
+<svg aria-roledescription="flowchart-v2" role="graphics-document document" viewBox="0 0 4157.296875 577" style="max-width: 4157.3px; background-color: white;" class="flowchart" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="100%" id="my-svg">
+<style>#my-svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#333;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#552222;}#my-svg .error-text{fill:#552222;stroke:#552222;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#333333;stroke:#333333;}#my-svg .marker.cross{stroke:#333333;}#my-svg svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#my-svg p{margin:0;}#my-svg .label{font-family:"trebuchet ms",verdana,arial,sans-serif;color:#333;}#my-svg .cluster-label text{fill:#333;}#my-svg .cluster-label span{color:#333;}#my-svg .cluster-label span p{background-color:transparent;}#my-svg .label text,#my-svg span{fill:#333;color:#333;}#my-svg .node rect,#my-svg .node circle,#my-svg .node ellipse,#my-svg .node polygon,#my-svg .node path{fill:#ECECFF;stroke:#9370DB;stroke-width:1px;}#my-svg .rough-node .label text,#my-svg .node .label text,#my-svg .image-shape .label,#my-svg .icon-shape .label{text-anchor:middle;}#my-svg .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#my-svg .rough-node .label,#my-svg .node .label,#my-svg .image-shape .label,#my-svg .icon-shape .label{text-align:center;}#my-svg .node.clickable{cursor:pointer;}#my-svg .root .anchor path{fill:#333333!important;stroke-width:0;stroke:#333333;}#my-svg .arrowheadPath{fill:#333333;}#my-svg .edgePath .path{stroke:#333333;stroke-width:2.0px;}#my-svg .flowchart-link{stroke:#333333;fill:none;}#my-svg .edgeLabel{background-color:rgba(232,232,232, 0.8);text-align:center;}#my-svg .edgeLabel p{background-color:rgba(232,232,232, 0.8);}#my-svg .edgeLabel rect{opacity:0.5;background-color:rgba(232,232,232, 0.8);fill:rgba(232,232,232, 0.8);}#my-svg .labelBkg{background-color:rgba(232, 232, 232, 0.5);}#my-svg .cluster rect{fill:#ffffde;stroke:#aaaa33;stroke-width:1px;}#my-svg .cluster text{fill:#333;}#my-svg .cluster span{color:#333;}#my-svg div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:12px;background:hsl(80, 100%, 96.2745098039%);border:1px solid #aaaa33;border-radius:2px;pointer-events:none;z-index:100;}#my-svg .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#333;}#my-svg rect.text{fill:none;stroke-width:0;}#my-svg .icon-shape,#my-svg .image-shape{background-color:rgba(232,232,232, 0.8);text-align:center;}#my-svg .icon-shape p,#my-svg .image-shape p{background-color:rgba(232,232,232, 0.8);padding:2px;}#my-svg .icon-shape rect,#my-svg .image-shape rect{opacity:0.5;background-color:rgba(232,232,232, 0.8);fill:rgba(232,232,232, 0.8);}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style>
+<g><marker orient="auto" markerHeight="8" markerWidth="8" markerUnits="userSpaceOnUse" refY="5" refX="5" viewBox="0 0 10 10" class="marker flowchart-v2" id="my-svg_flowchart-v2-pointEnd"><path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 0 L 10 5 L 0 10 z"/></marker><marker orient="auto" markerHeight="8" markerWidth="8" markerUnits="userSpaceOnUse" refY="5" refX="4.5" viewBox="0 0 10 10" class="marker flowchart-v2" id="my-svg_flowchart-v2-pointStart"><path style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 0 5 L 10 10 L 10 0 z"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="11" viewBox="0 0 10 10" class="marker flowchart-v2" id="my-svg_flowchart-v2-circleEnd"><circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5" refX="-1" viewBox="0 0 10 10" class="marker flowchart-v2" id="my-svg_flowchart-v2-circleStart"><circle style="stroke-width: 1; stroke-dasharray: 1, 0;" class="arrowMarkerPath" r="5" cy="5" cx="5"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="12" viewBox="0 0 11 11" class="marker cross flowchart-v2" id="my-svg_flowchart-v2-crossEnd"><path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 1,1 l 9,9 M 10,1 l -9,9"/></marker><marker orient="auto" markerHeight="11" markerWidth="11" markerUnits="userSpaceOnUse" refY="5.2" refX="-1" viewBox="0 0 11 11" class="marker cross flowchart-v2" id="my-svg_flowchart-v2-crossStart"><path style="stroke-width: 2; stroke-dasharray: 1, 0;" class="arrowMarkerPath" d="M 1,1 l 9,9 M 10,1 l -9,9"/></marker><g class="root"><g class="clusters"><g data-look="classic" id="MAC" class="cluster"><rect height="172" width="827.890625" y="92.89338302612305" x="653.4375" style=""/><g transform="translate(1019.21875, 92.89338302612305)" class="cluster-label"><foreignObject height="24" width="96.328125">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+This Mac only
+</p>
+</span>
+</div>
+</foreignObject></g></g><g data-look="classic" id="PHONE" class="cluster"><rect height="438.10661697387695" width="458.5" y="104.89338302612305" x="8" style=""/><g transform="translate(213.484375, 104.89338302612305)" class="cluster-label"><foreignObject height="24" width="47.53125">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+iPhone
+</p>
+</span>
+</div>
+</foreignObject></g></g></g><g class="edgePaths"><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_A_B_0" d="M168.389,246L180.751,234.816C193.113,223.631,217.838,201.262,233.7,190.078C249.563,178.893,256.563,178.893,260.063,178.893L263.563,178.893"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_C_D_0" d="M852.625,178.893L856.792,178.893C860.958,178.893,869.292,178.893,876.958,178.893C884.625,178.893,891.625,178.893,895.125,178.893L898.625,178.893"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_D_E_0" d="M1146.328,178.893L1150.495,178.893C1154.661,178.893,1162.995,178.893,1170.661,178.893C1178.328,178.893,1185.328,178.893,1188.828,178.893L1192.328,178.893"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_B_C_0" d="M441.5,178.893L445.667,178.893C449.833,178.893,458.167,178.893,477.911,178.893C497.656,178.893,528.813,178.893,559.969,178.893C591.125,178.893,622.281,178.893,641.359,178.893C660.438,178.893,667.438,178.893,670.938,178.893L674.438,178.893"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_E_F_0" d="M1456.328,178.893L1460.495,178.893C1464.661,178.893,1472.995,178.893,1481.328,178.893C1489.661,178.893,1497.995,178.893,1506.967,178.893C1515.94,178.893,1525.552,178.893,1530.358,178.893L1535.164,178.893"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_F_G_0" d="M1671.917,217.893L1685.986,231.411C1700.054,244.929,1728.191,271.964,1745.76,285.482C1763.328,299,1770.328,299,1773.828,299L1777.328,299"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_G_H_0" d="M2041.328,299L2045.495,299C2049.661,299,2057.995,299,2065.661,299C2073.328,299,2080.328,299,2083.828,299L2087.328,299"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_H_I_0" d="M2325.5,308.889L2329.667,309.241C2333.833,309.592,2342.167,310.296,2349.833,310.648C2357.5,311,2364.5,311,2368,311L2371.5,311"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_I_J_0" d="M2635.5,311L2656.333,311C2677.167,311,2718.833,311,2759.851,315.775C2800.869,320.55,2841.238,330.099,2861.423,334.874L2881.607,339.649"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_H_K_0" d="M2238.385,272L2257.071,255.167C2275.757,238.333,2313.128,204.667,2338.678,187.833C2364.227,171,2377.953,171,2384.816,171L2391.68,171"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_J_M_0" d="M3100.5,366L3104.667,366C3108.833,366,3117.167,366,3124.858,366.976C3132.548,367.951,3139.597,369.903,3143.121,370.878L3146.645,371.854"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_R_M_0" d="M4048.654,404.645L4025.605,432.037C4002.556,459.43,3956.458,514.215,3898.048,541.607C3839.638,569,3768.917,569,3714.536,569C3660.156,569,3622.117,569,3584.147,569C3546.177,569,3508.276,569,3470.375,569C3432.474,569,3394.573,569,3361.125,547.552C3327.677,526.105,3298.682,483.209,3284.185,461.762L3269.688,440.314"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_M_N_0" d="M3253.504,359L3270.699,305C3287.893,251,3322.283,143,3342.977,89C3363.672,35,3370.672,35,3374.172,35L3377.672,35"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_N_O_0" d="M3559.078,35L3563.245,35C3567.411,35,3575.745,35,3589.455,41.941C3603.165,48.882,3622.252,62.765,3631.796,69.706L3641.339,76.647"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" id="L_O_J_0" d="M3687.723,157L3670.449,221.333C3653.175,285.667,3618.627,414.333,3582.402,478.667C3546.177,543,3508.276,543,3470.375,543C3432.474,543,3394.573,543,3356.358,543C3318.143,543,3279.615,543,3241.086,543C3202.557,543,3164.029,543,3131.462,524.933C3098.896,506.865,3072.291,470.731,3058.989,452.663L3045.687,434.596"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" id="L_O_R_0" d="M3787.313,118L3807.82,118C3828.328,118,3869.344,118,3913.419,149.842C3957.495,181.684,4004.631,245.367,4028.199,277.209L4051.766,309.051"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" id="L_F_O_0" d="M1690.857,139.893L1701.769,132.744C1712.681,125.596,1734.504,111.298,1771.25,104.149C1807.995,97,1859.661,97,1911.328,97C1962.995,97,2014.661,97,2064.176,97C2113.69,97,2161.052,97,2208.414,97C2255.776,97,2303.138,97,2352.652,97C2402.167,97,2453.833,97,2522.167,97C2590.5,97,2675.5,97,2756.75,97C2838,97,2915.5,97,2976.333,97C3037.167,97,3081.333,97,3122.681,97C3164.029,97,3202.557,97,3241.086,97C3279.615,97,3318.143,97,3356.358,97C3394.573,97,3432.474,97,3470.375,97C3508.276,97,3546.177,97,3568.639,97.646C3591.1,98.292,3598.122,99.584,3601.633,100.231L3605.144,100.877"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" id="L_H_J_0" d="M2239.859,326L2258.299,341.833C2276.74,357.667,2313.62,389.333,2357.893,405.167C2402.167,421,2453.833,421,2522.167,421C2590.5,421,2675.5,421,2738.185,416.225C2800.869,411.45,2841.238,401.901,2861.423,397.126L2881.607,392.351"/><path marker-end="url(#my-svg_flowchart-v2-pointEnd)" style="" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" id="L_M_A_0" d="M3195.087,437L3183.49,446.833C3171.892,456.667,3148.696,476.333,3115.015,486.167C3081.333,496,3037.167,496,2976.333,496C2915.5,496,2838,496,2756.75,496C2675.5,496,2590.5,496,2522.167,496C2453.833,496,2402.167,496,2352.652,496C2303.138,496,2255.776,496,2208.414,496C2161.052,496,2113.69,496,2064.176,496C2014.661,496,1962.995,496,1911.328,496C1859.661,496,1807.995,496,1761.328,496C1714.661,496,1672.995,496,1631.328,496C1589.661,496,1547.995,496,1522.995,496C1497.995,496,1489.661,496,1459.661,496C1429.661,496,1377.995,496,1326.328,496C1274.661,496,1222.995,496,1172.686,496C1122.378,496,1073.427,496,1024.477,496C975.526,496,926.576,496,883.418,496C840.26,496,802.896,496,765.531,496C728.167,496,690.802,496,656.542,496C622.281,496,591.125,496,559.969,496C528.813,496,497.656,496,463.417,496C429.177,496,391.854,496,354.531,496C317.208,496,279.885,496,245.614,467.916C211.342,439.832,180.122,383.664,164.512,355.58L148.902,327.496"/></g><g class="edgeLabels"><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g transform="translate(559.96875, 178.89338302612305)" class="edgeLabel"><g transform="translate(-68.46875, -12)" class="label"><foreignObject height="24" width="136.9375">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel">
+<p>
+PUT, same network
+</p>
+</span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g class="edgeLabel"><g transform="translate(0, 0)" class="label"><foreignObject height="0" width="0">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel"></span>
+</div>
+</foreignObject></g></g><g transform="translate(3910.359375, 118)" class="edgeLabel"><g transform="translate(-98.046875, -12)" class="label"><foreignObject height="24" width="196.09375">
+<div class="labelBkg"
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel">
+<p>
+promote patterns that hold
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2760.5, 97)" class="edgeLabel"><g transform="translate(-100, -24)" class="label"><foreignObject height="48" width="200">
+<div class="labelBkg"
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel">
+<p>
+observer sees only that a file appeared
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2505.5, 421)" class="edgeLabel"><g transform="translate(-100, -24)" class="label"><foreignObject height="48" width="200">
+<div class="labelBkg"
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel">
+<p>
+merge the same idea across days
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(1631.328125, 496)" class="edgeLabel"><g transform="translate(-100, -24)" class="label"><foreignObject height="48" width="200">
+<div class="labelBkg"
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="edgeLabel">
+<p>
+spoken follow-ups close the loop
+</p>
+</span>
+</div>
+</foreignObject></g></g></g><g class="nodes"><g transform="translate(125.28125, 285)" id="flowchart-A-0" class="node default"><rect height="78" width="184.5625" y="-39" x="-92.28125" style="" class="basic label-container"/><g transform="translate(-62.28125, -24)" style="" class="label"><rect/><foreignObject height="48" width="124.5625">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+One button<br />Ambient or Quick
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(354.53125, 178.89338302612305)" id="flowchart-B-1" class="node default"><rect height="78" width="173.9375" y="-39" x="-86.96875" style="" class="basic label-container"/><g transform="translate(-56.96875, -24)" style="" class="label"><rect/><foreignObject height="48" width="113.9375">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+60s AAC chunks<br />queue until ACK
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(765.53125, 178.89338302612305)" id="flowchart-C-2" class="node default"><rect height="78" width="174.1875" y="-39" x="-87.09375" style="" class="basic label-container"/><g transform="translate(-57.09375, -24)" style="" class="label"><rect/><foreignObject height="48" width="114.1875">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+FastAPI :8765<br />sha256 + Bearer
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(1024.4765625, 178.89338302612305)" id="flowchart-D-3" class="node default"><rect height="78" width="243.703125" y="-39" x="-121.8515625" style="" class="basic label-container"/><g transform="translate(-91.8515625, -24)" style="" class="label"><rect/><foreignObject height="48" width="183.703125">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+VAD gate -&gt; local Whisper<br />transcript.model.txt
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(1326.328125, 178.89338302612305)" id="flowchart-E-5" class="node default"><rect height="102" width="260" y="-51" x="-130" style="" class="basic label-container"/><g transform="translate(-100, -36)" style="" class="label"><rect/><foreignObject height="72" width="200">
+<div
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+export_to_context<br />one recording = one text file
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(1631.328125, 178.89338302612305)" id="flowchart-F-9" class="node default"><rect height="78" width="184.328125" y="-39" x="-92.1640625" style="" class="basic label-container"/><g transform="translate(-62.1640625, -24)" style="" class="label"><rect/><foreignObject height="48" width="124.328125">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+daily_records/<br />raw text, no title
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(1911.328125, 299)" id="flowchart-G-11" class="node default"><rect height="102" width="260" y="-51" x="-130" style="" class="basic label-container"/><g transform="translate(-100, -36)" style="" class="label"><rect/><foreignObject height="72" width="200">
+<div
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+enhance<br />glossary + proofread + labels
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2208.4140625, 299)" id="flowchart-H-13" class="node default"><rect height="54" width="234.171875" y="-27" x="-117.0859375" style="" class="basic label-container"/><g transform="translate(-87.0859375, -12)" style="" class="label"><rect/><foreignObject height="24" width="174.171875">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+enhanced/ derived copy
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2505.5, 311)" id="flowchart-I-15" class="node default"><rect height="102" width="260" y="-51" x="-130" style="" class="basic label-container"/><g transform="translate(-100, -36)" style="" class="label"><rect/><foreignObject height="72" width="200">
+<div
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+triage<br />lossless topic sort -&gt; append-only landing
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2993, 366)" id="flowchart-J-17" class="node default"><path transform="translate(-107.5, -67.21323529411765)" style="" class="basic label-container" d="M0,15.808823529411764 a107.5,15.808823529411764 0,0,0 215,0 a107.5,15.808823529411764 0,0,0 -215,0 l0,102.80882352941177 a107.5,15.808823529411764 0,0,0 215,0 l0,-102.80882352941177"/><g transform="translate(-100, -26)" style="" class="label"><rect/><foreignObject height="72" width="200">
+<div
+style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+contexts/ L1 L2<br />decision docs, project dirs, memory
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(2505.5, 171)" id="flowchart-K-19" class="node default"><rect height="78" width="219.640625" y="-39" x="-109.8203125" style="" class="basic label-container"/><g transform="translate(-79.8203125, -24)" style="" class="label"><rect/><foreignObject height="48" width="159.640625">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+digest + task synthesis<br />mail, App Tasks
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(3241.0859375, 398)" id="flowchart-M-21" class="node default"><rect height="78" width="181.171875" y="-39" x="-90.5859375" style="" class="basic label-container"/><g transform="translate(-60.5859375, -24)" style="" class="label"><rect/><foreignObject height="48" width="121.171875">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+agent session<br />reads rules/ first
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(4091.3515625, 359)" id="flowchart-R-22" class="node default"><path transform="translate(-57.9453125, -49.54096127651294)" style="" class="basic label-container" d="M0,12.027307517675291 a57.9453125,12.027307517675291 0,0,0 115.890625,0 a57.9453125,12.027307517675291 0,0,0 -115.890625,0 l0,75.0273075176753 a57.9453125,12.027307517675291 0,0,0 115.890625,0 l0,-75.0273075176753"/><g transform="translate(-50.4453125, -14)" style="" class="label"><rect/><foreignObject height="48" width="100.890625">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+rules/ L3<br />always loaded
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(3470.375, 35)" id="flowchart-N-25" class="node default"><rect height="54" width="177.40625" y="-27" x="-88.703125" style="" class="basic label-container"/><g transform="translate(-58.703125, -12)" style="" class="label"><rect/><foreignObject height="24" width="117.40625">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+work + new files
+</p>
+</span>
+</div>
+</foreignObject></g></g><g transform="translate(3698.1953125, 118)" id="flowchart-O-27" class="node default"><rect height="78" width="178.234375" y="-39" x="-89.1171875" style="" class="basic label-container"/><g transform="translate(-59.1171875, -24)" style="" class="label"><rect/><foreignObject height="48" width="118.234375">
+<div
+style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"
+data-xmlns="http://www.w3.org/1999/xhtml">
+<span class="nodeLabel">
+<p>
+observer nightly<br />reflector weekly
+</p>
+</span>
+</div>
+</foreignObject></g></g></g></g></g>
+</svg>
+</div>
+<h2 id="evidence">Evidence</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python3 tools/check_rules.py</code> on the clean tree</td>
+<td><code>check_rules: OK</code>, exit 0</td>
+</tr>
+<tr>
+<td>Planted employer name, home path, account id</td>
+<td>3 FAIL lines, exit 1</td>
+</tr>
+<tr>
+<td>Planted stray <code>.aac</code></td>
+<td>FAIL, exit 1</td>
+</tr>
+<tr>
+<td><code>openspec validate c0001-method-and-requirements</code></td>
+<td>valid</td>
+</tr>
+<tr>
+<td>Mermaid block renders</td>
+<td>yes (mmdc exit 0)</td>
+</tr>
+<tr>
+<td>Existing suite, unchanged</td>
+<td>206 passed, 1 failed
+(<code>test_llm_title_retries_when_too_long</code>, caused by an
+uncommitted rename in <code>pipeline/extract_tasks.py</code> by another
+process; test not edited)</td>
+</tr>
+</tbody>
+</table>
+<p>Raw output:
+<code>openspec/changes/c0001-method-and-requirements/evidence.md</code>.</p>
+<h2 id="open-items">Open items</h2>
+<ul>
+<li>Voice content reaches memory only through triage; the observer sees
+that a file appeared, not what it says. Listed as direction R13.</li>
+<li>Nothing detects the same idea recorded on different days (R12).</li>
+<li><code>correct_classify.py</code> in the working tree is being
+revised to keep raw text under <code>raw/</code>; the committed contract
+writes a derived copy. METHOD notes both.</li>
+</ul>
+</body>
+</html>
