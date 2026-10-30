@@ -26,7 +26,7 @@
 | 录音 | 语音（iPhone / Mac 菜单栏 Ctrl+Shift） | 60s 分片 | `ios/`、`mac/AhaMac.swift` | 在用 |
 | 上传与转写 | `PUT /v1/audio/{id}`（可带 `X-Aha-Tags: claude`） | `~/aha_data/…/transcript.*.txt` | `server/`、`asr/`（`com.aha.server`） | 在用 |
 | 落成文字 | 转写 | `contexts/daily_records/D_HHMM_aha.md`（同分钟 `_aha-2.md`） | `pipeline/export_to_context.py` | 在用 |
-| enhance（词表+纠错+标点分段+分类） | `*_aha*.md` + `pipeline/glossary.txt` + 个人知识库术语（topics.yml / catalog 高频 topic） | `daily_records/enhanced/<名>_aha.enhance.md`（task / thinking / diary / smalltalk） | `pipeline/correct_classify.py`（本地 Ollama） | 新，自动 |
+| enhance（词表+纠错+标点分段+分类） | `*_aha*.md` + `pipeline/glossary.txt` + 个人知识库术语（topics.yml / catalog 高频 topic） | `daily_records/enhanced/<名>_aha.enhance.md`（task / thinking / diary / smalltalk） | `pipeline/correct_classify.py`（Claude CLI） | 新，自动 |
 | 语音任务合成 | `enhanced/*.enhance.md` 的 task/thinking 段 + 现有任务 + 负面清单 + topics.yml | `~/aha_data/inbox/tasks.json`（v2：title/next/area/topic/evidence/status；旧版备份 `tasks.v1.json`）；`GET /v1/tasks`、`POST /v1/tasks/{ack,dismiss,resynthesize}`、`POST /v1/tasks/{id}/to_claude`；App「Tasks」页按 工作/个人 → topic 展示，右滑推提醒事项、左滑删除、详情里可交给 Claude | `pipeline/synthesize_tasks.py`（Sonnet 无工具只吐 JSON；`nightly_digest/run.sh` 10:00 后每天一次）、`server/tasks.py` | 新 |
 | 发给 Claude | Recordings 里点 ✨ 的录音 | `claude -p --model sonnet --name aha-<id>`，只写 OpenSpec proposal | `pipeline/claude_tasks.py`（`com.aha.dispatch`，每 2 分钟） | 新 |
 | 日报 | `enhanced/`（缺失回退原文） | 每天 10:00 发前一天的邮件 | `periodic_jobs/nightly_digest/` | 在用 |

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """enhanced/*.enhance.md 里的 [task] 段 -> ~/aha_data/inbox/tasks.json（供 GET /v1/tasks 给 iOS 快捷指令拉去提醒事项）。
 
-提取是确定性的；之后用本地 qwen3（经 ollama_gate）把未投递条目的标题概括成一行（目标 ≤14 字，硬上限 20），模型不可用就保留截断标题。
+提取是确定性的；之后用 Claude CLI（tools/claude_cli.py，一次调用批量、JSON 输出）把未投递条目的标题概括成一行（目标 ≤14 字，硬上限 20），claude 不可用就保留截断标题。
 id = sha1(原文文件名 + 段落文字)[:12]；按 id 去重并保留 delivered 标记；
 重新 enhance 后文字变了的旧未投递条目标 stale（不删），新文字作为新条目加入。
 用法：extract_tasks.py [--all | --date D] [--retitle]   默认 今天+昨天；--retitle 用新提示词重做已概括过的标题
@@ -141,8 +141,8 @@ def run(ddir: Path, days: set[str] | None, out: Path) -> dict:
 
 TITLE_TARGET = 14   # 目标汉字数（手机一行）
 TITLE_HARD = 20     # 硬上限
-TITLE_PROMPT = ("下面是一段语音转写里识别出的待办（口语、可能有错字）。用一句不超过 {n} 个汉字的祈使句概括要做的事，"
-                "像提醒事项标题那样，只输出这一句，不要标点结尾、不要引号。\n\n{text}")
+TITLE_PROMPT = ("下面是若干段语音转写里识别出的待办（口语、可能有错字），每段以 [序号] 开头。给每段各写一句不超过 {n} 个汉字的祈使句，"
+                "像提醒事项标题那样，不要标点结尾、不要引号。只输出一个 JSON 对象：{{\"序号\": \"标题\", ...}}，不要其他文字。\n\n{text}")
 BREAKS = "，,、；;：: 　"
 
 
@@ -154,38 +154,48 @@ def cut_natural(t: str, hard: int = TITLE_HARD) -> str:
     return t[:cut if cut >= 6 else hard].strip(BREAKS)
 
 
-def _ask_title(gate, text: str, n: int) -> str:
-    r = gate.chat("qwen3:14b", [{"role": "user", "content": TITLE_PROMPT.format(n=n, text=text)}],
-                  {"temperature": 0.2, "num_predict": 60})
-    return gate.content(r).strip().splitlines()[0].strip(" \"'“”「」。.")
+def _ask_titles(claude_cli, texts: dict[str, str], n: int) -> dict[str, str]:
+    """一次调用概括一批待办：{id: 原文} -> {id: 标题}。输出按 JSON 解析（容忍 ``` 围栏）。"""
+    keys = list(texts)
+    body = "\n\n".join(f"[{i + 1}] {texts[k]}" for i, k in enumerate(keys))
+    reply = claude_cli.text(TITLE_PROMPT.format(n=n, text=body), model=os.environ.get("AHA_CC_MODEL", "sonnet"), timeout=300)
+    m = re.search(r"\{.*\}", reply, re.S)
+    data = json.loads(m.group(0)) if m else {}
+    out = {}
+    for i, k in enumerate(keys):
+        t = str(data.get(str(i + 1), "")).strip().strip(" \"'“”「」。.")
+        if t:
+            out[k] = t
+    return out
 
 
-def llm_title(gate, text: str) -> str:
-    t = _ask_title(gate, text, TITLE_TARGET)
-    if len(t) > TITLE_HARD:                        # 超过硬上限：要求更短，重试一次
-        t = _ask_title(gate, text, 10) or t
-    return cut_natural(t)
+def llm_titles(claude_cli, texts: dict[str, str]) -> dict[str, str]:
+    out = _ask_titles(claude_cli, texts, TITLE_TARGET)
+    long = {k: texts[k] for k, t in out.items() if len(t) > TITLE_HARD}
+    if long:                                       # 超过硬上限：要求更短，重试一次
+        out.update(_ask_titles(claude_cli, long, 10))
+    return {k: cut_natural(t) for k, t in out.items()}
 
 
 def summarize_titles(out: Path, limit: int = 200, force: bool = False) -> int:
-    """未投递、标题还没被本地模型概括过的条目 -> 用本地 qwen3（经 ollama_gate）重写成一行标题。
-    force=True 只重做「已被概括过」的（换了提示词后刷新旧标题）。模型不可用就保持原标题，下次再试；不阻塞上游。"""
-    sys.path.insert(0, os.environ.get("OLLAMA_GATE_DIR", str(HERE.parents[2] / "tools")))
-    import ollama_gate as gate  # noqa: E402
+    """未投递、标题还没被模型概括过的条目 -> 一次 Claude 调用批量重写成一行标题。
+    force=True 只重做「已被概括过」的（换了提示词后刷新旧标题）。claude 不可用就保持原标题，下次再试；不阻塞上游。"""
+    sys.path.insert(0, str(HERE.parents[2] / "tools"))
+    import claude_cli  # noqa: E402
+    if not claude_cli.available():
+        return 0
     with locked(out):
         todo = [dict(i) for i in load(out)
                 if not i.get("delivered") and not i.get("dismissed") and not i.get("stale")
                 and ((i.get("title_by") == "llm") if force else (i.get("title_by") != "llm"))][:limit]
-    done = {}
-    for it in todo:
-        text = it["note"].split("\n\n— ", 1)[0][:1500]
-        try:
-            t = llm_title(gate, text)
-        except Exception as e:  # noqa: BLE001
-            print(f"[extract_tasks] title llm unavailable: {e}", flush=True)
-            break
-        if t:
-            done[it["id"]] = t
+    if not todo:
+        return 0
+    texts = {it["id"]: it["note"].split("\n\n— ", 1)[0][:1500] for it in todo}
+    try:
+        done = llm_titles(claude_cli, texts)
+    except Exception as e:  # noqa: BLE001
+        print(f"[extract_tasks] title llm unavailable: {e}", flush=True)
+        return 0
     if done:
         with locked(out):
             items = load(out)

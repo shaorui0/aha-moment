@@ -77,7 +77,11 @@ def main(argv=None) -> int:
     files = plan(a.date, recordings(C.data_root(), a.date))
     stale = [p for p in (ddir.glob(f"{a.date}_*_aha*.md") if ddir.exists() else [])
              if OURS.match(p.name) and not p.name.endswith(".enhance.md") and p.name not in files]
-    changed = [n for n, t in files.items() if not (ddir / n).exists() or (ddir / n).read_text(encoding="utf-8") != t]
+    def _enhanced(n, t):   # correct_classify 已用增强全文覆盖 n，raw/ 备份与当前 ASR 一致 -> 别还原
+        r = ddir / "raw" / n
+        return r.exists() and r.read_text(encoding="utf-8").strip() == t.strip()
+    changed = [n for n, t in files.items()
+               if not _enhanced(n, t) and (not (ddir / n).exists() or (ddir / n).read_text(encoding="utf-8") != t)]
     print(f"{a.date}: {len(files)} recordings, {len(changed)} new/changed, {len(stale)} stale -> {ddir}")
     if not a.apply:
         print("dry-run (use --apply to write)")

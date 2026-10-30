@@ -109,15 +109,19 @@ def mk(tmp_path, name="2026-10-16_1000_aha.md", text="Encore 的事情要处理�
     return d, p
 
 
-def test_creates_derived_in_subdir_and_keeps_source(tmp_path):
+def test_overwrites_source_with_enhanced_and_backs_up_raw(tmp_path):
     d, p = mk(tmp_path)
     st = CC.run(d, None, ask=echo, up=lambda: True)
     out = d / "enhanced" / "2026-10-16_1000_aha.enhance.md"
     assert st["done"] == 1 and out.exists()
     txt = out.read_text()
     assert "oncall 的事情" in txt and "**[task]**" in txt and "- Encore → oncall" in txt
-    assert p.read_text() == "Encore 的事情要处理一下"          # source untouched
+    assert p.read_text() == "oncall 的事情要处理一下\n"          # src 被增强全文覆盖（无标签/无纠正清单）
+    assert (d / "raw" / p.name).read_text().strip() == "Encore 的事情要处理一下"   # 原文备份
     assert not list(d.glob("*.enhance*"))                       # nothing in the dir export_to_context globs
+    assert CC.is_fresh(p)                                       # mtime 对齐 -> 下次不重做
+    assert CC.run(d, None, ask=echo, up=lambda: True)["skipped"] == 1
+    assert CC.source_text(p) == "Encore 的事情要处理一下"          # --force 也从备份读，不二次增强
 
 
 def test_idempotent_and_reprocess_on_change(tmp_path):
@@ -135,10 +139,10 @@ def test_idempotent_and_reprocess_on_change(tmp_path):
     assert st["done"] == 1 and len(calls) > n
 
 
-def test_ollama_down_defers_without_error(tmp_path):
+def test_llm_down_defers_without_error(tmp_path):
     d, p = mk(tmp_path)
     st = CC.run(d, None, ask=lambda pr: pytest.fail("must not call"), up=lambda: False)
-    assert st["ollama_down"] and st["done"] == 0 and not (d / "enhanced").exists()
+    assert st["llm_down"] and st["done"] == 0 and not (d / "enhanced").exists()
 
 
 def test_llm_failure_is_swallowed_and_retried_next_tick(tmp_path):
