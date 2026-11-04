@@ -9,7 +9,8 @@ Dismissed / reminded / claude task titles go into a negative list so they are no
 
 Usage: synthesize_tasks.py [--days N (0 = all, default 3)] [--daily] [--dry-run]
   --daily: run only if it is past 10:00, nothing succeeded today yet and fewer than 3 failures today (hooked into
-           periodic_jobs/nightly_digest/run.sh after the digest).
+           periodic_jobs/nightly_digest/run.sh after the digest). Offline (api.anthropic.com:443 unreachable) or
+           network-looking claude errors are NOT counted as failures.
 Status (state/started/finished/last_ok/seen) lives in <data>/inbox/tasks_synth.json.
 """
 from __future__ import annotations
@@ -19,6 +20,7 @@ import hashlib
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -227,6 +229,17 @@ def write_status(st: dict, data: Path | None = None) -> None:
     C.write_atomic_text(status_path(data), json.dumps(st, ensure_ascii=False))
 
 
+NET_ERR_RE = re.compile(r"ENOTFOUND|Can't reach the API|ECONNREFUSED|ETIMEDOUT")
+
+
+def _online() -> bool:
+    try:
+        socket.create_connection(("api.anthropic.com", 443), timeout=5).close()
+        return True
+    except OSError:
+        return False
+
+
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -297,6 +310,9 @@ def main(argv=None) -> int:
         if datetime.now().hour < 10 or (st.get("last_ok") or "")[:10] == today or \
                 (st.get("fail_day") == today and st.get("fail_count", 0) >= 3):
             return 0
+        if not _online():
+            print("Skip: offline, not counted as a failure", flush=True)
+            return 0
     ddir = Path(os.environ.get("AHA_CONTEXT_ROOT") or DEFAULT_WS) / "contexts" / "daily_records"
     started = now_iso()
     write_status({**st, "state": "running", "pid": os.getpid(), "started": started, "error": None}, data)
@@ -305,6 +321,8 @@ def main(argv=None) -> int:
     except Exception as e:  # noqa: BLE001 - recorded, retried by the next tick
         cur = read_status(data)
         n = cur.get("fail_count", 0) + 1 if cur.get("fail_day") == today else 1
+        if a.daily and NET_ERR_RE.search(str(e)):        # network blip mid-run: record error, don't burn a retry
+            n = cur.get("fail_count", 0) if cur.get("fail_day") == today else 0
         write_status({**cur, "state": "error", "finished": now_iso(), "error": str(e)[:300], "fail_day": today, "fail_count": n}, data)
         print(f"[synthesize_tasks] failed: {e}", flush=True)
         return 1
