@@ -32,6 +32,8 @@ enum Settings {
     static let uploadModeKey = "uploadMode"
     static let profilesKey = "profiles"            // JSON [{name,url}]
     static let activeProfileKey = "activeProfile"  // name
+    static let askURLKey = "askURL"                // ask_station page, without credentials
+    static let askUserKey = "askUser"              // basic-auth user; password lives in Keychain "askPassword"
     static let claudeSessionsKey = "aha.claudeSessions"      // recordings (session ids) the user sent to Claude Code
     static let claudeTagPendingKey = "aha.claudeTagPending"  // subset whose server-side tag POST is not ACKed yet
 
@@ -121,13 +123,17 @@ enum Settings {
     /// Segments whose peak per-buffer RMS is below this are considered silent (about -50 dBFS).
     static let silenceRMS: Float = 0.003
 
+    static var askURL: String { UserDefaults.standard.string(forKey: askURLKey) ?? "" }
+    static var askUser: String? { UserDefaults.standard.string(forKey: askUserKey) }
+
     static var token: String {
         get { Keychain.get("token") ?? "" }
         set { Keychain.set("token", newValue) }
     }
 
     /// Setup link from the Mac (`aha qr` -> QR -> Camera): aha://config?server=..&backup=..&token=..
-    /// or `profile=<name>&server=<url>` to add/update a named profile (and make it active).
+    /// or `profile=<name>&server=<url>` to add/update a named profile (and make it active),
+    /// or `ask=https://user:password@host/ask/` to set up the 问答 tab.
     /// Every parameter is optional; only the ones present are applied. Returns true if anything was applied.
     @discardableResult
     static func applyConfigURL(_ url: URL) -> Bool {
@@ -143,6 +149,15 @@ enum Settings {
                 else { upsertProfile(name: "Home (Bonjour)", url: v); applied.append("server") }
             case "backup": upsertProfile(name: "Backup", url: v); applied.append("backup")
             case "token": token = v; applied.append("token")
+            case "ask":   // ask=https://user:password@host/ask/ -> URL in defaults, password in Keychain
+                guard var c = URLComponents(string: v), c.scheme == "https", c.host != nil else { break }
+                if let u = c.user, let p = c.password {
+                    UserDefaults.standard.set(u, forKey: askUserKey)
+                    Keychain.set("askPassword", p)
+                }
+                c.user = nil; c.password = nil
+                UserDefaults.standard.set(c.string ?? "", forKey: askURLKey)
+                applied.append("ask")
             default: break
             }
         }

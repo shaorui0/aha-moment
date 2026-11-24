@@ -2,12 +2,13 @@ import SwiftUI
 
 // MARK: - Tabs
 
-/// Bottom tab bar: 录音 (existing main screen) + 面板 (read-only Claude monitoring).
+/// Bottom tab bar: 录音 (existing main screen) + 面板 (read-only Claude monitoring) + 问答 (ask_station on claude-box).
 struct RootView: View {
     var body: some View {
         TabView {
             ContentView().tabItem { Label("录音", systemImage: "mic.fill") }
             PanelView().tabItem { Label("面板", systemImage: "rectangle.stack") }
+            AskView().tabItem { Label("问答", systemImage: "bubble.left.and.text.bubble.right") }
         }
     }
 }
